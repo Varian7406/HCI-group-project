@@ -23,7 +23,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
-ASSETS = ROOT / "project11" / "assets"
+ASSETS = ROOT / "assets"   # this is where the app looks (ui/main_window.py)
 IMAGE_REL = "images/training_panel_tp01.png"
 CONTENT_VERSION = "draft-01"
 SOURCE = (
