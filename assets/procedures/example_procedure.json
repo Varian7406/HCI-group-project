@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "procedure_id": "training_panel_01",
+  "content_version": "draft-01",
+  "image": "images/panel.png",
+  "source": "Fictional training panel — not real maintenance advice.",
+  "components": [
+    {"id": "connector_a", "label": "Connector A", "bounds": [0.08, 0.30, 0.22, 0.48]},
+    {"id": "valve_b",     "label": "Valve B",     "bounds": [0.40, 0.10, 0.60, 0.30]},
+    {"id": "sensor_c",    "label": "Sensor C",    "bounds": [0.75, 0.28, 0.92, 0.48]},
+    {"id": "pump_d",      "label": "Pump D",      "bounds": [0.10, 0.62, 0.30, 0.85]},
+    {"id": "filter_e",    "label": "Filter E",    "bounds": [0.65, 0.60, 0.85, 0.85]},
+    {"id": "relay_f",     "label": "Relay F",     "bounds": [0.40, 0.42, 0.58, 0.58]}
+  ],
+  "steps": [
+    {"id": "s01", "instruction": "Select Connector A to isolate power.",
+     "expected_action": "select", "component_id": "connector_a",
+     "explanation": "Isolating power first prevents accidental startup."},
+    {"id": "s02", "instruction": "Close Valve B to stop fluid flow.",
+     "expected_action": "select", "component_id": "valve_b",
+     "explanation": "Stopping flow avoids spillage while the cover is removed."},
+    {"id": "s03", "instruction": "Check Sensor C for a clear reading.",
+     "expected_action": "select", "component_id": "sensor_c",
+     "explanation": "A clean reading confirms the panel is safe to open."},
+    {"id": "s04", "instruction": "Depressurise via Pump D.",
+     "expected_action": "select", "component_id": "pump_d",
+     "explanation": "Depressurising protects the operator when the filter is removed."},
+    {"id": "s05", "instruction": "Open Relay F to discharge stored energy.",
+     "expected_action": "select", "component_id": "relay_f",
+     "explanation": "Discharging stored energy prevents a surprise arc."},
+    {"id": "s06", "instruction": "Remove Filter E for inspection.",
+     "expected_action": "select", "component_id": "filter_e",
+     "explanation": "Filter inspection is the goal of this procedure."},
+    {"id": "s07", "instruction": "Confirm all indicators are green, then finish.",
+     "expected_action": "select", "component_id": "sensor_c",
+     "explanation": "Final confirmation ensures the panel is safe to re-energise."}
+  ],
+  "hazard": {
+    "trigger_after_step": "s04",
+    "message": "Pressure warning: isolate the relief valve immediately.",
+    "correct_component_id": "valve_b",
+    "response_window_ms": 6000
+  }
+}
