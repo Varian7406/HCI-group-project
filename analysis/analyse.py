@@ -49,7 +49,8 @@ def main():
     args = ap.parse_args()
     rows = summarise(args.input)
     if not rows:
-        print("No logs found."); return
+        print("No logs found.")
+        return
     write_summary(rows, args.output)
 
 
