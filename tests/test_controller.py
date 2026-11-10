@@ -64,3 +64,17 @@ def test_review_does_not_reverse_state(ctrl):
     assert c.step_index == 1
     c.review_previous(200)
     assert c.step_index == 1
+
+
+def test_double_click_tail_is_ignored_not_an_error(ctrl):
+    c, _ = ctrl
+    assert c.handle_click("a", 100, 0.2, 0.2) == Outcome.ACCEPTED
+    assert c.step_index == 1
+    # Rapid second click on the SAME component: the tail of a double-click.
+    # Without the guard this would be scored as an error against step s02.
+    assert c.handle_click("a", 200, 0.2, 0.2) == Outcome.IGNORED
+    assert c.step_index == 1
+    # After the guard window the same click IS evaluated (and now rejected,
+    # because s02 expects component b).
+    assert c.handle_click("a", 600, 0.2, 0.2) == Outcome.REJECTED
+    assert c.step_index == 1

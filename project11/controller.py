@@ -1,6 +1,6 @@
 """SessionController: single task engine used by every condition (R03)."""
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Tuple
 
 from project11 import __version__, __study_version__
 from project11.event_logger import EventLogger
@@ -8,6 +8,12 @@ from project11.hazard import HazardManager
 from project11.models import Condition, Event, Outcome, Procedure
 from project11.scheduler import Scheduler
 from project11.secondary_task import SecondaryTask
+
+#: A second click on the SAME component this soon after an accepted action is
+#: treated as the tail of a double-click: logged, but not an error and not a
+#: step action.  Deliberately narrow: clicks on OTHER components are never
+#: discarded, they are real mistakes and belong in the data.
+DOUBLE_CLICK_GUARD_MS = 350
 
 
 @dataclass
@@ -37,6 +43,7 @@ class SessionController:
         self.started_at: Optional[int] = None
         self.completed: bool = False
         self.aborted: bool = False
+        self._last_accepted: Tuple[Optional[str], int] = (None, -(10**9))
 
     def start(self, now_ms: int) -> None:
         self.started_at = now_ms
@@ -53,9 +60,17 @@ class SessionController:
         if self.completed or self.aborted:
             return Outcome.IGNORED
 
+        last_cid, last_t = self._last_accepted
+        if component_id == last_cid and now_ms - last_t < DOUBLE_CLICK_GUARD_MS:
+            self._emit("DOUBLE_CLICK_IGNORED", component_id=component_id,
+                       x_source=x_norm, y_source=y_norm)
+            return Outcome.IGNORED
+
         if self.hazard.state.active and not self.hazard.state.responded:
             self.hazard.respond(component_id, now_ms)
             outcome = Outcome.ACCEPTED if self.hazard.state.correct else Outcome.REJECTED
+            if outcome == Outcome.ACCEPTED:
+                self._last_accepted = (component_id, now_ms)
             self._emit("HAZARD_RESPONSE",
                        component_id=component_id,
                        outcome=outcome.value,
@@ -68,6 +83,7 @@ class SessionController:
                        step_id=step.id, component_id=component_id,
                        outcome=Outcome.ACCEPTED.value,
                        x_source=x_norm, y_source=y_norm)
+            self._last_accepted = (component_id, now_ms)
             self.hazard.maybe_arm_after_step(step.id)
             self._advance(now_ms)
             return Outcome.ACCEPTED

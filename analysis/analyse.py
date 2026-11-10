@@ -6,7 +6,8 @@ from pathlib import Path
 
 def summarise(log_dir: Path) -> list:
     rows = []
-    for p in sorted(log_dir.glob("attempt_*.csv")):
+    # Logs live in per-session folders: data/<input>/<session_id>/attempt_*.csv
+    for p in sorted(log_dir.glob("**/attempt_*.csv")):
         with p.open(encoding="utf-8") as f:
             events = list(csv.DictReader(f))
         if not events:

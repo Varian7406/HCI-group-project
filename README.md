@@ -23,3 +23,17 @@ simulated maintenance-guidance experiment.
 
 ## Analyse
     python -m analysis.analyse --input data/example --output results/example
+
+## Tools
+    python tools/make_training_panel.py      # redraw panel + rewrite procedure JSONs
+    python tools/simulated_participant.py    # one bot-run attempt per condition -> data/demo
+    python tools/generate_example_data.py    # 6 fake participants -> data/example
+
+The panel image and the procedure JSONs come from ONE Python spec
+(`tools/make_training_panel.py`), so the clickable regions can never drift
+away from the picture. Edit the spec, re-run the tool, commit both.
+
+## Docs
+See `docs/architecture.md` (how the code fits together),
+`docs/requirements.md` (requirements register) and `docs/traceability.md`
+(requirement -> code -> test map).
