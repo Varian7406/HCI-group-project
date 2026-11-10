@@ -90,7 +90,7 @@ class MainWindow:
             return
 
         order = info["order"]
-        conditions = [Condition[c] for c in order]
+        conditions = [Condition(c) for c in order]
         self._order = conditions
         self._order_index = 0
         self._info = info
@@ -103,6 +103,7 @@ class MainWindow:
         left.pack(side="left", fill="both", expand=True)
         right = GuidancePanel(self.body, condition=cond)
         right.pack(side="right", fill="y", padx=(10, 0))
+        self.root.update_idletasks()
 
         img_path = ASSETS / self.procedure.image_rel_path
         if not img_path.exists():
