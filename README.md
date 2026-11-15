@@ -5,7 +5,6 @@ simulated maintenance-guidance experiment.
 
 ## Requirements
 - Python 3.10+
-- python3-tk (system package)
 - Pillow
 
 ## Install
