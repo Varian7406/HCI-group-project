@@ -18,6 +18,10 @@ simulated maintenance-guidance experiment.
     python -m project11 --session    # Researcher-run study
     python -m project11              # Just open the app
 
+## Run Web Server
+    python -m uvicorn web_server:app --reload --port 8000
+    http://127.0.0.1:8000 - web access(previous command necessary for execution)
+
 ## Test
     python -m pytest -q
 

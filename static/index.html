@@ -1,0 +1,271 @@
+<!-- replaces the files machine_canvas.py, guidance_panel.py - used for animations, draws ui-->
+
+<!-- static/index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Project 11 — One Step at a Time</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
+
+        /* CSS replaces ttk styling */
+        body {
+            margin: 0;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #1b1f27;
+            color: #e6e6e6;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Left: Machine Canvas */
+        #machine-canvas {
+            flex: 1;
+            position: relative;
+            background: #131720;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        #machine-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            user-select: none;
+            cursor: crosshair;
+        }
+
+        /* Dynamic Overlays (Replaces tk.Canvas create_rectangle) */
+        .highlight {
+            position: absolute;
+            border: 3px dashed #FFD700;
+            /* Bright Gold */
+            pointer-events: none;
+            box-sizing: border-box;
+            transition: all 0.2s ease-out;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+            /* Adds a nice gold glow around the box */
+        }
+
+        /* UPDATED: Better Font and Readability */
+        .highlight-label {
+            position: absolute;
+            color: #FFD700;
+            /* Gold text */
+            font-family: 'Montserrat', sans-serif;
+            /* The new, cleaner font */
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 1.5px;
+            /* Spaces out letters for a technical look */
+            text-transform: uppercase;
+            /* Makes it look like a professional HUD label */
+            transform: translateY(-130%);
+            white-space: nowrap;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+            /* Dark shadow so text is always readable */
+            background: rgba(0, 0, 0, 0.65);
+            /* Slight dark background behind text */
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        /* Right: Guidance Panel */
+        #guidance-panel {
+            width: 350px;
+            background: #131720;
+            padding: 20px;
+            border-left: 1px solid #262b36;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #step-label {
+            color: #6b7280;
+            margin: 4px 0 12px 0;
+            font-size: 14px;
+        }
+
+        .text-box {
+            border: 1px solid #262b36;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        #instr {
+            background: #131720;
+            color: #e6e6e6;
+            flex: 1;
+            margin-bottom: 12px;
+        }
+
+        #why {
+            background: #0f1115;
+            color: #a5c2ff;
+            height: 100px;
+        }
+
+        /* Top Bar */
+        #top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            background: #1b1f27;
+            border-bottom: 1px solid #262b36;
+            z-index: 10;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="top-bar">
+        <strong>Project 11 — One Step at a Time</strong>
+        <span id="status" style="color: #6b7280;">elapsed 0 ms</span>
+    </div>
+
+    <div id="machine-canvas">
+        <!-- Update src to match your actual asset path -->
+        <img id="machine-image" src="/assets/images/training_panel_tp01.png" alt="Machine Panel">
+    </div>
+
+    <div id="guidance-panel" style="margin-top: 50px;">
+        <h2 style="margin: 0 0 4px 0; font-size: 16px;">Instructions</h2>
+        <p id="step-label">Step - / -</p>
+        <div id="instr" class="text-box">Loading...</div>
+        <div id="why" class="text-box" style="display: none;">Explanation goes here.</div>
+    </div>
+
+    <script>
+        // --- 1. State & DOM Elements ---
+        const img = document.getElementById('machine-image');
+        const canvas = document.getElementById('machine-canvas');
+        let currentState = null;
+
+        // --- 2. 50ms Polling Loop (Replaces root.after) ---
+        async function tick() {
+            try {
+                const response = await fetch('/state');
+                currentState = await response.json();
+
+                if (currentState.status === 'running') {
+                    updateUI(currentState);
+                } else if (currentState.status === 'completed') {
+                    document.getElementById('instr').innerText = "Condition Complete!";
+                }
+            } catch (e) {
+                console.error("Failed to fetch state:", e);
+            }
+            setTimeout(tick, 50); // 50ms loop
+        }
+
+        // --- 3. UI Update Logic ---
+        function updateUI(state) {
+            // Update text
+            document.getElementById('step-label').innerText = `Step ${state.step_index + 1} / ${state.total_steps}`;
+            document.getElementById('instr').innerText = state.instruction;
+            document.getElementById('status').innerText = `elapsed ${state.elapsed_ms} ms | Secondary: ${state.secondary.value.toFixed(2)} (corr ${state.secondary.corrections}/${state.secondary.opportunities})`;
+
+            // Update explanation box visibility
+            const whyBox = document.getElementById('why');
+            if (state.condition === 'C_EXPLANATORY' && state.explanation) {
+                whyBox.style.display = 'block';
+                whyBox.innerText = state.explanation;
+            } else {
+                whyBox.style.display = 'none';
+            }
+
+            // Update Highlight Animation (Replaces norm_to_display_rect)
+            clearHighlights();
+            if (state.condition !== 'A_MANUAL' && state.highlight.bounds) {
+                drawHighlight(state.highlight.bounds, state.highlight.label, state.condition);
+            }
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.highlight').forEach(el => el.remove());
+        }
+
+        function drawHighlight(bounds, label, condition) {
+            // bounds are normalized [x1, y1, x2, y2] (0.0 to 1.0)
+            const imgRect = img.getBoundingClientRect();
+
+            // Calculate pixel coordinates relative to the displayed image
+            const x = imgRect.left + (bounds[0] * imgRect.width);
+            const y = imgRect.top + (bounds[1] * imgRect.height);
+            const w = (bounds[2] - bounds[0]) * imgRect.width;
+            const h = (bounds[3] - bounds[1]) * imgRect.height;
+
+            const color = '#FFD700'; // Forces everything to be Gold
+
+            const highlight = document.createElement('div');
+            highlight.className = 'highlight';
+            highlight.style.left = (x - canvas.getBoundingClientRect().left) + 'px';
+            highlight.style.top = (y - canvas.getBoundingClientRect().top) + 'px';
+            highlight.style.width = w + 'px';
+            highlight.style.height = h + 'px';
+            highlight.style.borderColor = color;
+
+            const labelEl = document.createElement('div');
+            labelEl.className = 'highlight-label';
+            labelEl.innerText = `-> ${label}`;
+            labelEl.style.color = color;
+            highlight.appendChild(labelEl);
+
+            canvas.appendChild(highlight);
+        }
+
+        // --- 4. Interaction Handlers ---
+        img.addEventListener('click', async (e) => {
+            if (!currentState || currentState.status !== 'running') return;
+
+            const imgRect = img.getBoundingClientRect();
+            const xn = (e.clientX - imgRect.left) / imgRect.width;
+            const yn = (e.clientY - imgRect.top) / imgRect.height;
+
+            // Find which component contains the click (mirrors geometry.py / Tkinter logic)
+            let clicked = null;
+            for (const c of currentState.components) {
+                const [l, t, r, b] = c.bounds;
+                if (l <= xn && xn <= r && t <= yn && yn <= b) { clicked = c; break; }
+            }
+            if (!clicked) return;
+
+            await fetch('/click', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ component_id: clicked.id, xn: xn, yn: yn })
+            });
+        });
+
+        // Spacebar for secondary task
+        document.addEventListener('keydown', async (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault(); // Prevent scrolling
+                await fetch('/secondary', { method: 'POST' });
+            }
+        });
+
+        // Handle window resize to keep highlights accurate
+        window.addEventListener('resize', () => {
+            if (currentState) updateUI(currentState);
+        });
+
+        // Start
+        tick();
+        img.onload = () => { if (currentState) updateUI(currentState); };
+    </script>
+</body>
+
+</html>
