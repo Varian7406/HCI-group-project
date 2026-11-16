@@ -6,11 +6,13 @@ simulated maintenance-guidance experiment.
 ## Requirements
 - Python 3.10+
 - Pillow
+- univcorn/fastapi
 
 ## Install
     python3 -m venv .venv
     source .venv/bin/activate  # Windows: .venv\Scripts\activate
     python -m pip install -r requirements-dev.txt
+    pip install fastapi uvicorn
 
 ## Run
     python -m project11 --practice   # Practice mode
