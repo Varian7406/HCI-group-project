@@ -10,8 +10,8 @@ plus the human-factors reason.
 | R03 | `controller.SessionController.handle_click` | `test_controller.py` | consistency across conditions | |
 | R04 | `controller.pause` -> `scheduler.Scheduler.pause` | `test_timing.py` | user control; fair attention measurement | |
 | R05 | `controller.review_previous` | `test_review_does_not_reverse_state` | user control without risk of accidental undo | |
-| R06 | `hazard.HazardManager` | (unit tests to add) | attention: spontaneous detection, not forced acknowledgement | |
-| R07 | `secondary_task.SecondaryTask` | (unit tests to add) | attention: divided-attention load | |
+| R06 | `hazard.HazardManager` | `test_hazard_*` (controller), web smoke test | attention: spontaneous detection, not forced acknowledgement | 2026-11-21: found the hazard was armed but never PRESENTED; fixed in `controller._advance`, which now emits `HAZARD_PRESENTED` and starts the response window. Double-click guard exempted while a hazard is active. |
+| R07 | `secondary_task.SecondaryTask` | web smoke test (gauge state in API) | attention: divided-attention load | dedicated unit tests still to add; pilot the difficulty |
 | R08 | `event_logger.EventLogger`, `analysis/validate_logs.py` | `test_logs.py` | trustworthy evidence | |
 | R09 | `EventLogger._open` raises `RuntimeError` | `test_bad_destination_raises` | never run an unrecorded study | |
 | R10 | `.gitignore`, participant codes only | - | privacy | privacy review pending |

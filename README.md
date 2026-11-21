@@ -33,6 +33,16 @@ The panel image and the procedure JSONs come from ONE Python spec
 (`tools/make_training_panel.py`), so the clickable regions can never drift
 away from the picture. Edit the spec, re-run the tool, commit both.
 
+## Web frontend (new)
+    python -m pip install -r requirements-web.txt
+    python -m uvicorn webapp.server:app --port 8000
+Then open http://127.0.0.1:8000 (Firefox on the lab machines).
+
+The web app runs the SAME experiment engine as the tkinter app
+(`project11.controller` + `event_logger`); `webapp/server.py` is only a thin
+adapter. Logs land in `data/raw-local/<session_id>/` in the usual schema and
+pass `analysis/validate_logs.py`. Auto-pauses when the tab is hidden.
+
 ## Docs
 See `docs/architecture.md` (how the code fits together),
 `docs/requirements.md` (requirements register) and `docs/traceability.md`

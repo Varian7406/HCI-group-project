@@ -61,7 +61,13 @@ class SessionController:
             return Outcome.IGNORED
 
         last_cid, last_t = self._last_accepted
-        if component_id == last_cid and now_ms - last_t < DOUBLE_CLICK_GUARD_MS:
+        # The guard does not apply while a hazard is active: a rapid click on
+        # the same component is then a deliberate hazard response (the trigger
+        # step and the correct hazard component may even be the same part),
+        # not the tail of a double-click.
+        if (not self.hazard.state.active
+                and component_id == last_cid
+                and now_ms - last_t < DOUBLE_CLICK_GUARD_MS):
             self._emit("DOUBLE_CLICK_IGNORED", component_id=component_id,
                        x_source=x_norm, y_source=y_norm)
             return Outcome.IGNORED
@@ -100,8 +106,16 @@ class SessionController:
             self._emit("TASK_COMPLETED")
             self._emit("SESSION_ENDED")
             return
+        completed_step_id = self.proc.steps[self.step_index].id
         self.step_index += 1
         self._emit("STEP_PRESENTED", step_id=self.current_step().id)
+        # If the step just completed was the configured hazard trigger, the
+        # hazard goes active NOW: presented_at starts the response window.
+        # (Before 2026-11-21 the hazard was armed but never presented - the
+        # web smoke test caught this; see docs/traceability.md R06.)
+        if self.hazard.maybe_arm_after_step(completed_step_id):
+            self.hazard.present(now_ms)
+            self._emit("HAZARD_PRESENTED", step_id=completed_step_id)
 
     def review_previous(self, now_ms: int) -> Optional[str]:
         if self.step_index == 0:
