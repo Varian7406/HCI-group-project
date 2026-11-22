@@ -1,193 +1,427 @@
 {
-  "schema_version": 1,
-  "procedure_id": "example_procedure",
-  "content_version": "pc-01",
-  "image": "pc_model_3d",
-  "source": "Simple interactive 3D desktop PC training model.",
-  "components": [
-    {
-      "id": "case",
-      "label": "PC case",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "glass_panel",
-      "label": "Glass side panel",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "motherboard",
-      "label": "Motherboard",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "cpu",
-      "label": "CPU",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "cpu_cooler",
-      "label": "CPU cooler",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "ram",
-      "label": "RAM",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "gpu",
-      "label": "Graphics card (GPU)",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "psu",
-      "label": "Power supply (PSU)",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "storage_ssd",
-      "label": "SSD storage",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "front_fan",
-      "label": "Front intake fan",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "rear_fan",
-      "label": "Rear exhaust fan",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
-    },
-    {
-      "id": "power_button",
-      "label": "Power button",
-      "bounds": [
-        0.0,
-        0.0,
-        1.0,
-        1.0
-      ]
+    "schema_version": 1,
+    "procedure_id": "ram_replacement_01",
+    "content_version": "ram-01",
+    "image": "pc_model_3d",
+    "source": "Stylised RAM replacement training simulation. Follow the specific computer and motherboard manufacturer's instructions in real maintenance.",
+    "components": [
+        {
+            "id": "case",
+            "label": "PC Case",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "case_feet",
+            "label": "Case Feet",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "motherboard",
+            "label": "Motherboard",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "motherboard_capacitors",
+            "label": "Motherboard Capacitors",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "cpu",
+            "label": "CPU",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "cpu_cooler",
+            "label": "CPU Cooler",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "cpu_fan",
+            "label": "CPU Cooling Fan",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "ram",
+            "label": "RAM Modules",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "vrm_heatsink",
+            "label": "VRM Heatsink",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "chipset_heatsink",
+            "label": "Chipset Heatsink",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "gpu",
+            "label": "Graphics Card",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "gpu_fan_1",
+            "label": "GPU Fan 1",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "gpu_fan_2",
+            "label": "GPU Fan 2",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "gpu_fan_3",
+            "label": "GPU Fan 3",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "pcie_slots",
+            "label": "PCIe Slots",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "nvme_ssd",
+            "label": "M.2 NVMe SSD",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "storage_ssd",
+            "label": "2.5-inch SSD",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "psu",
+            "label": "Power Supply",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "psu_fan",
+            "label": "Power Supply Fan",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "psu_switch",
+            "label": "PSU On/Off Switch",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "power_cable",
+            "label": "PSU Power Cable",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "front_fan_1",
+            "label": "Front Fan 1",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "front_fan_2",
+            "label": "Front Fan 2",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "front_fan_3",
+            "label": "Front Fan 3",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "rear_fan",
+            "label": "Rear Fan",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "top_fan_1",
+            "label": "Top Fan 1",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "top_fan_2",
+            "label": "Top Fan 2",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "cable_24pin",
+            "label": "24-pin Motherboard Cable",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "cable_cpu",
+            "label": "CPU Power Cable",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "cable_gpu",
+            "label": "GPU Power Cable",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "front_io",
+            "label": "Front I/O Ports",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "rear_io",
+            "label": "Rear I/O Ports",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "power_button",
+            "label": "Case Power Button",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        },
+        {
+            "id": "glass_panel",
+            "label": "Tempered Glass Panel",
+            "bounds": [
+                0.01,
+                0.01,
+                0.99,
+                0.99
+            ]
+        }
+    ],
+    "steps": [
+        {
+            "id": "s01",
+            "instruction": "Shut down the PC through its operating system. Wait until all fans and lights have stopped. Click the power button to confirm the shutdown.",
+            "expected_action": "select",
+            "component_id": "power_button",
+            "explanation": "Do not use Sleep. A full shutdown is required before working inside the computer."
+        },
+        {
+            "id": "s02",
+            "instruction": "Switch the power supply unit (PSU) to 0 (OFF).",
+            "expected_action": "toggle",
+            "component_id": "psu_switch",
+            "explanation": "The PSU switch disconnects the power supply's normal output from the system."
+        },
+        {
+            "id": "s03",
+            "instruction": "Disconnect the AC power cable from the back of the computer.",
+            "expected_action": "remove",
+            "component_id": "power_cable",
+            "explanation": "The computer must be disconnected from mains power before internal components are handled."
+        },
+        {
+            "id": "s04",
+            "instruction": "Remove the tempered-glass side panel. Before handling RAM, use an anti-static wrist strap or touch unpainted, grounded metal on the case.",
+            "expected_action": "remove",
+            "component_id": "glass_panel",
+            "explanation": "Electrostatic discharge can damage memory modules. Keep the power cable disconnected."
+        },
+        {
+            "id": "s05",
+            "instruction": "Remove the existing RAM modules from the motherboard.",
+            "expected_action": "remove",
+            "component_id": "ram",
+            "explanation": "Release the memory slot's retaining clips, then lift the RAM modules straight out. Handle them by their edges."
+        },
+        {
+            "id": "s06",
+            "instruction": "Install the replacement RAM modules in the motherboard memory slots.",
+            "expected_action": "install",
+            "component_id": "ram",
+            "explanation": "Align the notch in the RAM with the key in the slot. Press evenly until the retaining clips secure the module."
+        },
+        {
+            "id": "s07",
+            "instruction": "Reinstall the tempered-glass side panel.",
+            "expected_action": "install",
+            "component_id": "glass_panel",
+            "explanation": "Make sure the panel is properly seated and secured."
+        },
+        {
+            "id": "s08",
+            "instruction": "Reconnect the AC power cable to the computer.",
+            "expected_action": "install",
+            "component_id": "power_cable",
+            "explanation": "Reconnect power only after the internal work and case reassembly are complete."
+        },
+        {
+            "id": "s09",
+            "instruction": "Switch the PSU back to I (ON).",
+            "expected_action": "toggle",
+            "component_id": "psu_switch",
+            "explanation": "The PSU can be switched on after the power cable and case panel have been reconnected."
+        },
+        {
+            "id": "s10",
+            "instruction": "Press the case power button to start the PC.",
+            "expected_action": "select",
+            "component_id": "power_button",
+            "explanation": "Check that the computer starts normally and that the replacement memory is detected."
+        }
+    ],
+    "hazard": {
+        "trigger_after_step": "s03",
+        "message": "ELECTRICAL SAFETY ALERT: The mains cable is disconnected, but residual energy may remain in the system. Press and hold the case power button for approximately 5 seconds. This does NOT make the inside of the PSU safe to open. Never open the PSU.",
+        "correct_component_id": "power_button",
+        "response_window_ms": 10000
     }
-  ],
-  "steps": [
-    {
-      "id": "s01",
-      "instruction": "Select the glass side panel.",
-      "expected_action": "select",
-      "component_id": "glass_panel",
-      "explanation": "Identify the removable side panel of the PC case."
-    },
-    {
-      "id": "s02",
-      "instruction": "Remove the glass side panel.",
-      "expected_action": "remove",
-      "component_id": "glass_panel",
-      "explanation": "Move the glass panel beside the case to expose the components."
-    },
-    {
-      "id": "s03",
-      "instruction": "Select the graphics card (GPU).",
-      "expected_action": "select",
-      "component_id": "gpu",
-      "explanation": "The graphics card is the large expansion card inside the case."
-    },
-    {
-      "id": "s04",
-      "instruction": "Remove the graphics card.",
-      "expected_action": "remove",
-      "component_id": "gpu",
-      "explanation": "The GPU is removed from its position in the case."
-    },
-    {
-      "id": "s05",
-      "instruction": "Install the graphics card again.",
-      "expected_action": "install",
-      "component_id": "gpu",
-      "explanation": "Return the GPU to its original position."
-    },
-    {
-      "id": "s06",
-      "instruction": "Install the glass side panel.",
-      "expected_action": "install",
-      "component_id": "glass_panel",
-      "explanation": "Close the case by returning the glass panel."
-    },
-    {
-      "id": "s07",
-      "instruction": "Identify the front intake fan.",
-      "expected_action": "select",
-      "component_id": "front_fan",
-      "explanation": "The front fan draws cool air into the case."
-    },
-    {
-      "id": "s08",
-      "instruction": "Identify the rear exhaust fan.",
-      "expected_action": "select",
-      "component_id": "rear_fan",
-      "explanation": "The rear fan helps move warm air out of the case."
-    }
-  ],
-  "hazard": {
-    "trigger_after_step": "s04",
-    "message": "PC SAFETY ALERT: Shut down the computer using the case power button.",
-    "correct_component_id": "power_button",
-    "response_window_ms": 8000
-  }
 }

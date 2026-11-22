@@ -432,11 +432,7 @@
         // ============================================================
 
         const components = {};
-
-        const originalPositions = new Map();
-
         const movingParts = new Map();
-
         let removedPartCount = 0;
 
 
@@ -1050,6 +1046,7 @@
         // ============================================================
 
         const psu = group('psu');
+        const psuSwitch = group('psu_switch');
 
         box(
             psu,
@@ -1993,16 +1990,45 @@
         }
 
 
+
         // ============================================================
         // 40. START APPLICATION
         // ============================================================
 
         animate();
 
-        tick();
+        async function startApplication() {
 
-    </script>
+            statusElement.textContent = 'Restarting training session...';
 
-</body>
+            try {
 
-</html>
+                // Ask Python to discard the previous session
+                // and create a completely fresh one.
+                const resetResponse = await fetch('/reset', {
+                    method: 'POST'
+                });
+
+                if (!resetResponse.ok) {
+                    throw new Error('Could not restart training session.');
+                }
+
+                // Only start polling after the reset has succeeded.
+                statusElement.textContent = 'Training session started.';
+
+                tick();
+
+            } catch (error) {
+
+                console.error('Application startup failed:', error);
+
+                statusElement.textContent = 'Session startup error';
+
+                instructionElement.textContent =
+                    'Could not start the training session. Please refresh the page.';
+
+            }
+
+        }
+
+        startApplication();
