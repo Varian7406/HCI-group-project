@@ -1,0 +1,812 @@
+diff --git a/assets/procedures/pc_fan.json b/assets/procedures/pc_fan.json
+index 51db649..3ff92dc 100644
+--- a/assets/procedures/pc_fan.json
++++ b/assets/procedures/pc_fan.json
+@@ -5,56 +5,212 @@
+   "image": "images/panel.png",
+   "source": "FICTIONAL desktop-PC maintenance simulation. Illustrative only - not real maintenance advice. Hardware facts to be validated against an equipment source before the main study.",
+   "components": [
+-    {"id": "psu_switch",      "label": "PSU power switch",       "bounds": [0.245, 0.127, 0.298, 0.207]},
+-    {"id": "side_screw",      "label": "Panel thumbscrew",       "bounds": [0.920, 0.908, 0.950, 0.945]},
+-    {"id": "side_panel",      "label": "Side panel",             "bounds": [0.025, 0.033, 0.975, 0.967]},
+-    {"id": "chassis_ground",  "label": "Chassis ground point",   "bounds": [0.055, 0.493, 0.120, 0.593]},
+-    {"id": "fan_header",      "label": "Fan power header",       "bounds": [0.1425, 0.695, 0.178, 0.725]},
+-    {"id": "fan_screws",      "label": "Fan corner screws",      "bounds": [0.052, 0.657, 0.138, 0.770]},
+-    {"id": "case_fan",        "label": "Front case fan",         "bounds": [0.055, 0.660, 0.135, 0.767]},
+-    {"id": "dimm_slot_2",     "label": "RAM module (slot 2)",    "bounds": [0.681, 0.325, 0.715, 0.550]},
+-    {"id": "cpu_cooler",      "label": "CPU cooler",             "bounds": [0.4025, 0.337, 0.5475, 0.530]},
+-    {"id": "gpu_card",        "label": "Graphics card",          "bounds": [0.365, 0.643, 0.730, 0.790]},
+-    {"id": "hdd",             "label": "Hard drive",             "bounds": [0.715, 0.220, 0.928, 0.260]},
+-    {"id": "cmos_battery",    "label": "CMOS battery",           "bounds": [0.791, 0.330, 0.834, 0.387]}
++    {
++      "id": "psu_switch",
++      "label": "PSU power switch",
++      "bounds": [
++        0.245,
++        0.127,
++        0.298,
++        0.207
++      ]
++    },
++    {
++      "id": "side_screw",
++      "label": "Panel thumbscrew",
++      "bounds": [
++        0.921,
++        0.14,
++        0.949,
++        0.179
++      ]
++    },
++    {
++      "id": "side_panel",
++      "label": "Side panel",
++      "bounds": [
++        0.025,
++        0.033,
++        0.975,
++        0.967
++      ]
++    },
++    {
++      "id": "chassis_ground",
++      "label": "Chassis ground point",
++      "bounds": [
++        0.055,
++        0.493,
++        0.12,
++        0.593
++      ]
++    },
++    {
++      "id": "fan_header",
++      "label": "Fan power header",
++      "bounds": [
++        0.1425,
++        0.695,
++        0.178,
++        0.725
++      ]
++    },
++    {
++      "id": "fan_screws",
++      "label": "Fan corner screws",
++      "bounds": [
++        0.052,
++        0.657,
++        0.138,
++        0.77
++      ]
++    },
++    {
++      "id": "case_fan",
++      "label": "Front case fan",
++      "bounds": [
++        0.055,
++        0.66,
++        0.135,
++        0.767
++      ]
++    },
++    {
++      "id": "dimm_slot_2",
++      "label": "RAM module (slot 2)",
++      "bounds": [
++        0.681,
++        0.325,
++        0.715,
++        0.55
++      ]
++    },
++    {
++      "id": "cpu_cooler",
++      "label": "CPU cooler",
++      "bounds": [
++        0.4025,
++        0.337,
++        0.5475,
++        0.53
++      ]
++    },
++    {
++      "id": "gpu_card",
++      "label": "Graphics card",
++      "bounds": [
++        0.365,
++        0.643,
++        0.73,
++        0.79
++      ]
++    },
++    {
++      "id": "hdd",
++      "label": "Hard drive",
++      "bounds": [
++        0.715,
++        0.22,
++        0.928,
++        0.26
++      ]
++    },
++    {
++      "id": "cmos_battery",
++      "label": "CMOS battery",
++      "bounds": [
++        0.791,
++        0.33,
++        0.834,
++        0.387
++      ]
++    }
+   ],
+   "steps": [
+-    {"id": "s01", "instruction": "Flip the PSU rocker switch at the rear of the case to O (off).",
+-     "expected_action": "toggle", "component_id": "psu_switch",
+-     "explanation": "The switch isolates mains power from the motherboard. A spinning fan must never be unplugged while the board is powered."},
+-    {"id": "s02", "instruction": "Remove the thumbscrew at the bottom-right corner of the side panel.",
+-     "expected_action": "remove", "component_id": "side_screw",
+-     "explanation": "The thumbscrew is the only fastener holding the panel. Loosening it by hand avoids tools scratching the paint."},
+-    {"id": "s03", "instruction": "Slide the side panel off to open the case.",
+-     "expected_action": "remove", "component_id": "side_panel",
+-     "explanation": "The panel rides on slots along the case edge. Sliding it back first, then lifting, avoids bending the sheet metal."},
+-    {"id": "s04", "instruction": "Touch the bare metal of the case to discharge static.",
+-     "expected_action": "ground", "component_id": "chassis_ground",
+-     "explanation": "Static from your body can damage the fan's motor driver even though no spark is visible. Bare case metal equalises the charge."},
+-    {"id": "s05", "instruction": "Unplug the front fan's power cable from the header on the fan corner.",
+-     "expected_action": "disconnect", "component_id": "fan_header",
+-     "explanation": "The header feeds the fan's tachometer and speed control. Pulling the connector body, not the wires, keeps the pins straight."},
+-    {"id": "s06", "instruction": "Remove the four screws at the corners of the fan mount.",
+-     "expected_action": "remove", "component_id": "fan_screws",
+-     "explanation": "Four screws hold the fan against the front mount. Removing them in the marked order keeps the fan square in its frame."},
+-    {"id": "s07", "instruction": "Lift the old fan out of the front mount.",
+-     "expected_action": "remove", "component_id": "case_fan",
+-     "explanation": "The fan is now held by nothing but its frame. Lifting it straight out avoids scraping the dust shroud."},
+-    {"id": "s08", "instruction": "Fit the new fan into the front mount.",
+-     "expected_action": "install", "component_id": "case_fan",
+-     "explanation": "The fan's arrow marking shows airflow direction, front to back, so the case breathes the way the ducts were designed."},
+-    {"id": "s09", "instruction": "Refit the four screws at the corners of the fan mount.",
+-     "expected_action": "install", "component_id": "fan_screws",
+-     "explanation": "Tightening all four evenly stops the fan frame rattling against the mount when it spins up."},
+-    {"id": "s10", "instruction": "Plug the fan's power cable back into the header.",
+-     "expected_action": "connect", "component_id": "fan_header",
+-     "explanation": "The header is keyed so the plug only fits one way. A seated plug lets the motherboard read the fan's speed."},
+-    {"id": "s11", "instruction": "Slide the side panel back on until it clicks home.",
+-     "expected_action": "install", "component_id": "side_panel",
+-     "explanation": "Closing the case before power is restored keeps dust out and the airflow path intact."},
+-    {"id": "s12", "instruction": "Flip the PSU power switch back to I (on).",
+-     "expected_action": "toggle", "component_id": "psu_switch",
+-     "explanation": "Power is restored only after every part is secured, so the new fan spins up in a fully assembled machine."}
++    {
++      "id": "s01",
++      "instruction": "Flip the PSU rocker switch at the rear of the case to O (off).",
++      "expected_action": "toggle",
++      "component_id": "psu_switch",
++      "explanation": "The switch isolates mains power from the motherboard. A spinning fan must never be unplugged while the board is powered."
++    },
++    {
++      "id": "s02",
++      "instruction": "Remove the thumbscrew at the top-right corner of the side panel.",
++      "expected_action": "remove",
++      "component_id": "side_screw",
++      "explanation": "The thumbscrew is the only fastener holding the panel. Loosening it by hand avoids tools scratching the paint."
++    },
++    {
++      "id": "s03",
++      "instruction": "Slide the side panel off to open the case.",
++      "expected_action": "remove",
++      "component_id": "side_panel",
++      "explanation": "The panel rides on slots along the case edge. Sliding it back first, then lifting, avoids bending the sheet metal."
++    },
++    {
++      "id": "s04",
++      "instruction": "Touch the bare metal of the case to discharge static.",
++      "expected_action": "ground",
++      "component_id": "chassis_ground",
++      "explanation": "Static from your body can damage the fan's motor driver even though no spark is visible. Bare case metal equalises the charge."
++    },
++    {
++      "id": "s05",
++      "instruction": "Unplug the front fan's power cable from the header on the fan corner.",
++      "expected_action": "disconnect",
++      "component_id": "fan_header",
++      "explanation": "The header feeds the fan's tachometer and speed control. Pulling the connector body, not the wires, keeps the pins straight."
++    },
++    {
++      "id": "s06",
++      "instruction": "Remove the four screws at the corners of the fan mount.",
++      "expected_action": "remove",
++      "component_id": "fan_screws",
++      "explanation": "Four screws hold the fan against the front mount. Removing them in the marked order keeps the fan square in its frame."
++    },
++    {
++      "id": "s07",
++      "instruction": "Lift the old fan out of the front mount.",
++      "expected_action": "remove",
++      "component_id": "case_fan",
++      "explanation": "The fan is now held by nothing but its frame. Lifting it straight out avoids scraping the dust shroud."
++    },
++    {
++      "id": "s08",
++      "instruction": "Fit the new fan into the front mount.",
++      "expected_action": "install",
++      "component_id": "case_fan",
++      "explanation": "The fan's arrow marking shows airflow direction, front to back, so the case breathes the way the ducts were designed."
++    },
++    {
++      "id": "s09",
++      "instruction": "Refit the four screws at the corners of the fan mount.",
++      "expected_action": "install",
++      "component_id": "fan_screws",
++      "explanation": "Tightening all four evenly stops the fan frame rattling against the mount when it spins up."
++    },
++    {
++      "id": "s10",
++      "instruction": "Plug the fan's power cable back into the header.",
++      "expected_action": "connect",
++      "component_id": "fan_header",
++      "explanation": "The header is keyed so the plug only fits one way. A seated plug lets the motherboard read the fan's speed."
++    },
++    {
++      "id": "s11",
++      "instruction": "Slide the side panel back on until it clicks home.",
++      "expected_action": "install",
++      "component_id": "side_panel",
++      "explanation": "Closing the case before power is restored keeps dust out and the airflow path intact."
++    },
++    {
++      "id": "s12",
++      "instruction": "Flip the PSU power switch back to I (on).",
++      "expected_action": "toggle",
++      "component_id": "psu_switch",
++      "explanation": "Power is restored only after every part is secured, so the new fan spins up in a fully assembled machine."
++    }
+   ],
+   "hazard": {
+     "trigger_after_step": "s03",
+@@ -62,4 +218,4 @@
+     "correct_component_id": "chassis_ground",
+     "response_window_ms": 6000
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/assets/procedures/pc_gpu.json b/assets/procedures/pc_gpu.json
+index cd6de0a..a712b09 100644
+--- a/assets/procedures/pc_gpu.json
++++ b/assets/procedures/pc_gpu.json
+@@ -5,53 +5,205 @@
+   "image": "images/panel.png",
+   "source": "FICTIONAL desktop-PC maintenance simulation. Illustrative only - not real maintenance advice. Hardware facts to be validated against an equipment source before the main study.",
+   "components": [
+-    {"id": "psu_switch",      "label": "PSU power switch",       "bounds": [0.245, 0.127, 0.298, 0.207]},
+-    {"id": "side_screw",      "label": "Panel thumbscrew",       "bounds": [0.920, 0.908, 0.950, 0.945]},
+-    {"id": "side_panel",      "label": "Side panel",             "bounds": [0.025, 0.033, 0.975, 0.967]},
+-    {"id": "chassis_ground",  "label": "Chassis ground point",   "bounds": [0.055, 0.493, 0.120, 0.593]},
+-    {"id": "pcie_power",      "label": "PCIe power connector",   "bounds": [0.6225, 0.640, 0.680, 0.672]},
+-    {"id": "pcie_tab",        "label": "Slot retention tab",     "bounds": [0.712, 0.750, 0.733, 0.792]},
+-    {"id": "gpu_card",        "label": "Graphics card",          "bounds": [0.365, 0.643, 0.730, 0.790]},
+-    {"id": "dimm_slot_2",     "label": "RAM module (slot 2)",    "bounds": [0.681, 0.325, 0.715, 0.550]},
+-    {"id": "cpu_cooler",      "label": "CPU cooler",             "bounds": [0.4025, 0.337, 0.5475, 0.530]},
+-    {"id": "case_fan",        "label": "Front case fan",         "bounds": [0.055, 0.660, 0.135, 0.767]},
+-    {"id": "hdd",             "label": "Hard drive",             "bounds": [0.715, 0.220, 0.928, 0.260]},
+-    {"id": "cmos_battery",    "label": "CMOS battery",           "bounds": [0.791, 0.330, 0.834, 0.387]}
++    {
++      "id": "psu_switch",
++      "label": "PSU power switch",
++      "bounds": [
++        0.245,
++        0.127,
++        0.298,
++        0.207
++      ]
++    },
++    {
++      "id": "side_screw",
++      "label": "Panel thumbscrew",
++      "bounds": [
++        0.921,
++        0.14,
++        0.949,
++        0.179
++      ]
++    },
++    {
++      "id": "side_panel",
++      "label": "Side panel",
++      "bounds": [
++        0.025,
++        0.033,
++        0.975,
++        0.967
++      ]
++    },
++    {
++      "id": "chassis_ground",
++      "label": "Chassis ground point",
++      "bounds": [
++        0.055,
++        0.493,
++        0.12,
++        0.593
++      ]
++    },
++    {
++      "id": "pcie_power",
++      "label": "PCIe power connector",
++      "bounds": [
++        0.6225,
++        0.64,
++        0.68,
++        0.672
++      ]
++    },
++    {
++      "id": "pcie_tab",
++      "label": "Slot retention tab",
++      "bounds": [
++        0.712,
++        0.75,
++        0.733,
++        0.792
++      ]
++    },
++    {
++      "id": "gpu_card",
++      "label": "Graphics card",
++      "bounds": [
++        0.365,
++        0.643,
++        0.73,
++        0.79
++      ]
++    },
++    {
++      "id": "dimm_slot_2",
++      "label": "RAM module (slot 2)",
++      "bounds": [
++        0.681,
++        0.325,
++        0.715,
++        0.55
++      ]
++    },
++    {
++      "id": "cpu_cooler",
++      "label": "CPU cooler",
++      "bounds": [
++        0.4025,
++        0.337,
++        0.5475,
++        0.53
++      ]
++    },
++    {
++      "id": "case_fan",
++      "label": "Front case fan",
++      "bounds": [
++        0.055,
++        0.66,
++        0.135,
++        0.767
++      ]
++    },
++    {
++      "id": "hdd",
++      "label": "Hard drive",
++      "bounds": [
++        0.715,
++        0.22,
++        0.928,
++        0.26
++      ]
++    },
++    {
++      "id": "cmos_battery",
++      "label": "CMOS battery",
++      "bounds": [
++        0.791,
++        0.33,
++        0.834,
++        0.387
++      ]
++    }
+   ],
+   "steps": [
+-    {"id": "s01", "instruction": "Flip the PSU rocker switch at the rear of the case to O (off).",
+-     "expected_action": "toggle", "component_id": "psu_switch",
+-     "explanation": "The switch isolates mains power from the motherboard. A graphics card must never be handled while the board carries standby voltage."},
+-    {"id": "s02", "instruction": "Remove the thumbscrew at the bottom-right corner of the side panel.",
+-     "expected_action": "remove", "component_id": "side_screw",
+-     "explanation": "The thumbscrew is the only fastener holding the panel. Loosening it by hand avoids tools scratching the paint."},
+-    {"id": "s03", "instruction": "Slide the side panel off to open the case.",
+-     "expected_action": "remove", "component_id": "side_panel",
+-     "explanation": "The panel rides on slots along the case edge. Sliding it back first, then lifting, avoids bending the sheet metal."},
+-    {"id": "s04", "instruction": "Touch the bare metal of the case to discharge static.",
+-     "expected_action": "ground", "component_id": "chassis_ground",
+-     "explanation": "A graphics card is dense with static-sensitive circuitry. Grounding yourself first protects it even though no spark is visible."},
+-    {"id": "s05", "instruction": "Unplug the 6-pin PCIe power cable from the top edge of the card.",
+-     "expected_action": "disconnect", "component_id": "pcie_power",
+-     "explanation": "The cable feeds the card up to 150 watts. Pulling the connector body, not the wires, keeps the pins from bending."},
+-    {"id": "s06", "instruction": "Push the retention tab at the far end of the PCIe slot down to release the card.",
+-     "expected_action": "release", "component_id": "pcie_tab",
+-     "explanation": "The tab is a plastic latch at the slot end. Pressing it unlocks the card's edge connector so the card can lift out."},
+-    {"id": "s07", "instruction": "Pull the old graphics card straight out of the slot.",
+-     "expected_action": "remove", "component_id": "gpu_card",
+-     "explanation": "Straight, even pull keeps the edge connector aligned. Tilting the card while it is half-seated can crack the slot."},
+-    {"id": "s08", "instruction": "Seat the new card firmly into the PCIe slot until the tab clicks.",
+-     "expected_action": "install", "component_id": "gpu_card",
+-     "explanation": "The tab clicking means the edge connector is fully home. A half-seated card is the most common cause of no-display faults."},
+-    {"id": "s09", "instruction": "Plug the 6-pin PCIe power cable back into the top edge of the card.",
+-     "expected_action": "connect", "component_id": "pcie_power",
+-     "explanation": "The card will not start without auxiliary power. The connector is keyed so it only fits one way round."},
+-    {"id": "s10", "instruction": "Slide the side panel back on until it clicks home.",
+-     "expected_action": "install", "component_id": "side_panel",
+-     "explanation": "Closing the case before power is restored keeps dust out and the airflow path intact."},
+-    {"id": "s11", "instruction": "Flip the PSU power switch back to I (on).",
+-     "expected_action": "toggle", "component_id": "psu_switch",
+-     "explanation": "Power is restored only after every part is secured, so the card powers up in a fully assembled machine."}
++    {
++      "id": "s01",
++      "instruction": "Flip the PSU rocker switch at the rear of the case to O (off).",
++      "expected_action": "toggle",
++      "component_id": "psu_switch",
++      "explanation": "The switch isolates mains power from the motherboard. A graphics card must never be handled while the board carries standby voltage."
++    },
++    {
++      "id": "s02",
++      "instruction": "Remove the thumbscrew at the top-right corner of the side panel.",
++      "expected_action": "remove",
++      "component_id": "side_screw",
++      "explanation": "The thumbscrew is the only fastener holding the panel. Loosening it by hand avoids tools scratching the paint."
++    },
++    {
++      "id": "s03",
++      "instruction": "Slide the side panel off to open the case.",
++      "expected_action": "remove",
++      "component_id": "side_panel",
++      "explanation": "The panel rides on slots along the case edge. Sliding it back first, then lifting, avoids bending the sheet metal."
++    },
++    {
++      "id": "s04",
++      "instruction": "Touch the bare metal of the case to discharge static.",
++      "expected_action": "ground",
++      "component_id": "chassis_ground",
++      "explanation": "A graphics card is dense with static-sensitive circuitry. Grounding yourself first protects it even though no spark is visible."
++    },
++    {
++      "id": "s05",
++      "instruction": "Unplug the 6-pin PCIe power cable from the top edge of the card.",
++      "expected_action": "disconnect",
++      "component_id": "pcie_power",
++      "explanation": "The cable feeds the card up to 150 watts. Pulling the connector body, not the wires, keeps the pins from bending."
++    },
++    {
++      "id": "s06",
++      "instruction": "Push the retention tab at the far end of the PCIe slot down to release the card.",
++      "expected_action": "release",
++      "component_id": "pcie_tab",
++      "explanation": "The tab is a plastic latch at the slot end. Pressing it unlocks the card's edge connector so the card can lift out."
++    },
++    {
++      "id": "s07",
++      "instruction": "Pull the old graphics card straight out of the slot.",
++      "expected_action": "remove",
++      "component_id": "gpu_card",
++      "explanation": "Straight, even pull keeps the edge connector aligned. Tilting the card while it is half-seated can crack the slot."
++    },
++    {
++      "id": "s08",
++      "instruction": "Seat the new card firmly into the PCIe slot until the tab clicks.",
++      "expected_action": "install",
++      "component_id": "gpu_card",
++      "explanation": "The tab clicking means the edge connector is fully home. A half-seated card is the most common cause of no-display faults."
++    },
++    {
++      "id": "s09",
++      "instruction": "Plug the 6-pin PCIe power cable back into the top edge of the card.",
++      "expected_action": "connect",
++      "component_id": "pcie_power",
++      "explanation": "The card will not start without auxiliary power. The connector is keyed so it only fits one way round."
++    },
++    {
++      "id": "s10",
++      "instruction": "Slide the side panel back on until it clicks home.",
++      "expected_action": "install",
++      "component_id": "side_panel",
++      "explanation": "Closing the case before power is restored keeps dust out and the airflow path intact."
++    },
++    {
++      "id": "s11",
++      "instruction": "Flip the PSU power switch back to I (on).",
++      "expected_action": "toggle",
++      "component_id": "psu_switch",
++      "explanation": "Power is restored only after every part is secured, so the card powers up in a fully assembled machine."
++    }
+   ],
+   "hazard": {
+     "trigger_after_step": "s03",
+@@ -59,4 +211,4 @@
+     "correct_component_id": "chassis_ground",
+     "response_window_ms": 6000
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/assets/procedures/pc_ram.json b/assets/procedures/pc_ram.json
+index 200cf94..b0d15d4 100644
+--- a/assets/procedures/pc_ram.json
++++ b/assets/procedures/pc_ram.json
+@@ -5,50 +5,198 @@
+   "image": "images/panel.png",
+   "source": "FICTIONAL desktop-PC maintenance simulation. Illustrative only - not real maintenance advice. Hardware facts to be validated against an equipment source before the main study.",
+   "components": [
+-    {"id": "psu_switch",      "label": "PSU power switch",       "bounds": [0.245, 0.127, 0.298, 0.207]},
+-    {"id": "side_screw",      "label": "Panel thumbscrew",       "bounds": [0.920, 0.908, 0.950, 0.945]},
+-    {"id": "side_panel",      "label": "Side panel",             "bounds": [0.025, 0.033, 0.975, 0.967]},
+-    {"id": "chassis_ground",  "label": "Chassis ground point",   "bounds": [0.055, 0.493, 0.120, 0.593]},
+-    {"id": "dimm_clip_top",   "label": "Top retention clip",     "bounds": [0.686, 0.307, 0.710, 0.330]},
+-    {"id": "dimm_clip_bottom","label": "Bottom retention clip",  "bounds": [0.686, 0.545, 0.710, 0.568]},
+-    {"id": "dimm_slot_2",     "label": "RAM module (slot 2)",    "bounds": [0.681, 0.325, 0.715, 0.550]},
+-    {"id": "cpu_cooler",      "label": "CPU cooler",             "bounds": [0.4025, 0.337, 0.5475, 0.530]},
+-    {"id": "gpu_card",        "label": "Graphics card",          "bounds": [0.365, 0.643, 0.730, 0.790]},
+-    {"id": "case_fan",        "label": "Front case fan",         "bounds": [0.055, 0.660, 0.135, 0.767]},
+-    {"id": "hdd",             "label": "Hard drive",             "bounds": [0.715, 0.220, 0.928, 0.260]},
+-    {"id": "cmos_battery",    "label": "CMOS battery",           "bounds": [0.791, 0.330, 0.834, 0.387]}
++    {
++      "id": "psu_switch",
++      "label": "PSU power switch",
++      "bounds": [
++        0.245,
++        0.127,
++        0.298,
++        0.207
++      ]
++    },
++    {
++      "id": "side_screw",
++      "label": "Panel thumbscrew",
++      "bounds": [
++        0.921,
++        0.14,
++        0.949,
++        0.179
++      ]
++    },
++    {
++      "id": "side_panel",
++      "label": "Side panel",
++      "bounds": [
++        0.025,
++        0.033,
++        0.975,
++        0.967
++      ]
++    },
++    {
++      "id": "chassis_ground",
++      "label": "Chassis ground point",
++      "bounds": [
++        0.055,
++        0.493,
++        0.12,
++        0.593
++      ]
++    },
++    {
++      "id": "dimm_clip_top",
++      "label": "Top retention clip",
++      "bounds": [
++        0.686,
++        0.307,
++        0.71,
++        0.33
++      ]
++    },
++    {
++      "id": "dimm_clip_bottom",
++      "label": "Bottom retention clip",
++      "bounds": [
++        0.686,
++        0.545,
++        0.71,
++        0.568
++      ]
++    },
++    {
++      "id": "dimm_slot_2",
++      "label": "RAM module (slot 2)",
++      "bounds": [
++        0.681,
++        0.325,
++        0.715,
++        0.55
++      ]
++    },
++    {
++      "id": "cpu_cooler",
++      "label": "CPU cooler",
++      "bounds": [
++        0.4025,
++        0.337,
++        0.5475,
++        0.53
++      ]
++    },
++    {
++      "id": "gpu_card",
++      "label": "Graphics card",
++      "bounds": [
++        0.365,
++        0.643,
++        0.73,
++        0.79
++      ]
++    },
++    {
++      "id": "case_fan",
++      "label": "Front case fan",
++      "bounds": [
++        0.055,
++        0.66,
++        0.135,
++        0.767
++      ]
++    },
++    {
++      "id": "hdd",
++      "label": "Hard drive",
++      "bounds": [
++        0.715,
++        0.22,
++        0.928,
++        0.26
++      ]
++    },
++    {
++      "id": "cmos_battery",
++      "label": "CMOS battery",
++      "bounds": [
++        0.791,
++        0.33,
++        0.834,
++        0.387
++      ]
++    }
+   ],
+   "steps": [
+-    {"id": "s01", "instruction": "Flip the PSU rocker switch at the rear of the case to O (off).",
+-     "expected_action": "toggle", "component_id": "psu_switch",
+-     "explanation": "The switch isolates mains power from the motherboard. The board still carries standby voltage while the switch is on, so nothing is touched before this."},
+-    {"id": "s02", "instruction": "Remove the thumbscrew at the bottom-right corner of the side panel.",
+-     "expected_action": "remove", "component_id": "side_screw",
+-     "explanation": "The thumbscrew is the only fastener holding the panel. Loosening it by hand avoids tools scratching the paint."},
+-    {"id": "s03", "instruction": "Slide the side panel off to open the case.",
+-     "expected_action": "remove", "component_id": "side_panel",
+-     "explanation": "The panel rides on slots along the case edge. Sliding it back first, then lifting, avoids bending the sheet metal."},
+-    {"id": "s04", "instruction": "Touch the bare metal of the case to discharge static.",
+-     "expected_action": "ground", "component_id": "chassis_ground",
+-     "explanation": "Static electricity from your body can destroy memory chips without any visible spark. Touching bare case metal equalises the charge."},
+-    {"id": "s05", "instruction": "Open the top retention clip of the RAM slot.",
+-     "expected_action": "release", "component_id": "dimm_clip_top",
+-     "explanation": "The clip is a plastic lever that locks the module in place. Opening it releases the top of the module."},
+-    {"id": "s06", "instruction": "Open the bottom retention clip of the RAM slot.",
+-     "expected_action": "release", "component_id": "dimm_clip_bottom",
+-     "explanation": "Both clips must be open before the module can come out. Forcing it with a clip closed breaks the clip or the slot."},
+-    {"id": "s07", "instruction": "Pull the RAM module straight up and out of the slot.",
+-     "expected_action": "remove", "component_id": "dimm_slot_2",
+-     "explanation": "Pulling straight up keeps the gold contacts aligned. Wiggling or pulling at an angle bends the contacts in the slot."},
+-    {"id": "s08", "instruction": "Press the replacement module into the slot until both clips snap closed.",
+-     "expected_action": "install", "component_id": "dimm_slot_2",
+-     "explanation": "The module only fits one way because of the keyed notch. Even pressure until the clips click means the contacts are fully seated."},
+-    {"id": "s09", "instruction": "Slide the side panel back on until it clicks home.",
+-     "expected_action": "install", "component_id": "side_panel",
+-     "explanation": "Closing the case before power is restored keeps dust out and the airflow path intact."},
+-    {"id": "s10", "instruction": "Flip the PSU power switch back to I (on).",
+-     "expected_action": "toggle", "component_id": "psu_switch",
+-     "explanation": "Power is restored only after every part is secured, so the memory controller can retrain during startup."}
++    {
++      "id": "s01",
++      "instruction": "Flip the PSU rocker switch at the rear of the case to O (off).",
++      "expected_action": "toggle",
++      "component_id": "psu_switch",
++      "explanation": "The switch isolates mains power from the motherboard. The board still carries standby voltage while the switch is on, so nothing is touched before this."
++    },
++    {
++      "id": "s02",
++      "instruction": "Remove the thumbscrew at the top-right corner of the side panel.",
++      "expected_action": "remove",
++      "component_id": "side_screw",
++      "explanation": "The thumbscrew is the only fastener holding the panel. Loosening it by hand avoids tools scratching the paint."
++    },
++    {
++      "id": "s03",
++      "instruction": "Slide the side panel off to open the case.",
++      "expected_action": "remove",
++      "component_id": "side_panel",
++      "explanation": "The panel rides on slots along the case edge. Sliding it back first, then lifting, avoids bending the sheet metal."
++    },
++    {
++      "id": "s04",
++      "instruction": "Touch the bare metal of the case to discharge static.",
++      "expected_action": "ground",
++      "component_id": "chassis_ground",
++      "explanation": "Static electricity from your body can destroy memory chips without any visible spark. Touching bare case metal equalises the charge."
++    },
++    {
++      "id": "s05",
++      "instruction": "Open the top retention clip of the RAM slot.",
++      "expected_action": "release",
++      "component_id": "dimm_clip_top",
++      "explanation": "The clip is a plastic lever that locks the module in place. Opening it releases the top of the module."
++    },
++    {
++      "id": "s06",
++      "instruction": "Open the bottom retention clip of the RAM slot.",
++      "expected_action": "release",
++      "component_id": "dimm_clip_bottom",
++      "explanation": "Both clips must be open before the module can come out. Forcing it with a clip closed breaks the clip or the slot."
++    },
++    {
++      "id": "s07",
++      "instruction": "Pull the RAM module straight up and out of the slot.",
++      "expected_action": "remove",
++      "component_id": "dimm_slot_2",
++      "explanation": "Pulling straight up keeps the gold contacts aligned. Wiggling or pulling at an angle bends the contacts in the slot."
++    },
++    {
++      "id": "s08",
++      "instruction": "Press the replacement module into the slot until both clips snap closed.",
++      "expected_action": "install",
++      "component_id": "dimm_slot_2",
++      "explanation": "The module only fits one way because of the keyed notch. Even pressure until the clips click means the contacts are fully seated."
++    },
++    {
++      "id": "s09",
++      "instruction": "Slide the side panel back on until it clicks home.",
++      "expected_action": "install",
++      "component_id": "side_panel",
++      "explanation": "Closing the case before power is restored keeps dust out and the airflow path intact."
++    },
++    {
++      "id": "s10",
++      "instruction": "Flip the PSU power switch back to I (on).",
++      "expected_action": "toggle",
++      "component_id": "psu_switch",
++      "explanation": "Power is restored only after every part is secured, so the memory controller can retrain during startup."
++    }
+   ],
+   "hazard": {
+     "trigger_after_step": "s03",
+@@ -56,4 +204,4 @@
+     "correct_component_id": "chassis_ground",
+     "response_window_ms": 6000
+   }
+-}
++}
+\ No newline at end of file
+diff --git a/webapp/static/index.html b/webapp/static/index.html
+index 9f26e5e..87c4564 100644
+--- a/webapp/static/index.html
++++ b/webapp/static/index.html
+@@ -353,14 +353,15 @@
+                 fill="#454c57" font-family="Arial" letter-spacing="6">AURORA TX-1</text>
+           <text x="500" y="318" text-anchor="middle" font-size="11"
+                 fill="#333a44" font-family="Arial" letter-spacing="3">PERFORMANCE SERIES</text>
+-          <!-- thumbscrew: INTERACTIVE side_screw -->
++          <!-- thumbscrew: INTERACTIVE side_screw (top-right, always on-screen) -->
+           <g class="comp" id="side_screw" data-component="side_screw" tabindex="0"
+              role="button" aria-label="Panel thumbscrew">
+-            <circle class="screw" cx="748" cy="556" r="9" fill="#9aa0a8"
+-                    stroke="#4a4f57" stroke-width="2"/>
+-            <line class="screw" x1="742" y1="556" x2="754" y2="556" stroke="#3a3f47" stroke-width="2.5"/>
+-            <text class="screw" x="748" y="580" text-anchor="middle" font-size="7"
+-                  fill="#6a717c" font-family="Arial">THUMBSCREW</text>
++            <circle class="screw" cx="748" cy="96" r="11" fill="#c9cdd3"
++                    stroke="#6a717c" stroke-width="2.5"/>
++            <circle class="screw" cx="748" cy="96" r="6" fill="#b2b8bf"/>
++            <line class="screw" x1="744" y1="92" x2="752" y2="100" stroke="#4a4f57" stroke-width="2.5"/>
++            <text class="screw" x="748" y="126" text-anchor="middle" font-size="9"
++                  font-weight="bold" fill="#9aa2ad" font-family="Arial">THUMBSCREW</text>
+           </g>
+         </g>
+ 
