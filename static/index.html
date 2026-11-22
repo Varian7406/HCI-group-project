@@ -1,271 +1,2008 @@
 <!-- replaces the files machine_canvas.py, guidance_panel.py - used for animations, draws ui-->
 
 <!-- static/index.html -->
+
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <title>Project 11 — One Step at a Time</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project 11 - PC Training</title>
 
-        /* CSS replaces ttk styling */
+    <!-- Load Three.js from the CDN -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
-            font-family: 'Inter', system-ui, sans-serif;
-            background: #1b1f27;
-            color: #e6e6e6;
-            display: flex;
             height: 100vh;
+            display: flex;
             overflow: hidden;
+            background: #171b23;
+            color: #eee;
+            font-family: Arial, sans-serif;
         }
 
-        /* Left: Machine Canvas */
-        #machine-canvas {
+        #machine {
             flex: 1;
+            min-width: 0;
             position: relative;
-            background: #131720;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
+            background: radial-gradient(circle, #303846, #11151c);
         }
 
-        #machine-image {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            user-select: none;
-            cursor: crosshair;
+        #pc-view {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+            touch-action: none;
         }
 
-        /* Dynamic Overlays (Replaces tk.Canvas create_rectangle) */
-        .highlight {
-            position: absolute;
-            border: 3px dashed #FFD700;
-            /* Bright Gold */
-            pointer-events: none;
-            box-sizing: border-box;
-            transition: all 0.2s ease-out;
-            box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
-            /* Adds a nice gold glow around the box */
+        #pc-view:active {
+            cursor: grabbing;
         }
 
-        /* UPDATED: Better Font and Readability */
-        .highlight-label {
-            position: absolute;
-            color: #FFD700;
-            /* Gold text */
-            font-family: 'Montserrat', sans-serif;
-            /* The new, cleaner font */
-            font-weight: 700;
-            font-size: 14px;
-            letter-spacing: 1.5px;
-            /* Spaces out letters for a technical look */
-            text-transform: uppercase;
-            /* Makes it look like a professional HUD label */
-            transform: translateY(-130%);
-            white-space: nowrap;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-            /* Dark shadow so text is always readable */
-            background: rgba(0, 0, 0, 0.65);
-            /* Slight dark background behind text */
-            padding: 4px 8px;
-            border-radius: 4px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-        }
-
-        /* Right: Guidance Panel */
-        #guidance-panel {
-            width: 350px;
-            background: #131720;
-            padding: 20px;
-            border-left: 1px solid #262b36;
-            display: flex;
-            flex-direction: column;
-        }
-
-        #step-label {
-            color: #6b7280;
-            margin: 4px 0 12px 0;
-            font-size: 14px;
-        }
-
-        .text-box {
-            border: 1px solid #262b36;
-            padding: 12px;
-            border-radius: 4px;
-            font-size: 14px;
-            line-height: 1.5;
-        }
-
-        #instr {
-            background: #131720;
-            color: #e6e6e6;
-            flex: 1;
-            margin-bottom: 12px;
-        }
-
-        #why {
-            background: #0f1115;
-            color: #a5c2ff;
-            height: 100px;
-        }
-
-        /* Top Bar */
-        #top-bar {
+        #topbar {
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            padding: 12px 20px;
+            padding: 16px 20px;
+            background: rgba(15, 19, 26, 0.88);
+            border-bottom: 1px solid #394150;
             display: flex;
             justify-content: space-between;
-            background: #1b1f27;
-            border-bottom: 1px solid #262b36;
-            z-index: 10;
+            gap: 12px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        #status {
+            color: #aab2c0;
+            font-size: 12px;
+        }
+
+        #hint {
+            position: absolute;
+            bottom: 16px;
+            left: 20px;
+            color: #aab2c0;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        #panel {
+            width: 340px;
+            flex-shrink: 0;
+            background: #11151d;
+            border-left: 1px solid #303846;
+            padding: 70px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        #step {
+            color: #929cac;
+            font-size: 13px;
+        }
+
+        #selected {
+            color: #FFD700;
+            font-weight: bold;
+            font-size: 12px;
+            letter-spacing: 1px;
+            min-height: 18px;
+            margin-bottom: 12px;
+        }
+
+        .text-box {
+            padding: 14px;
+            border: 1px solid #303846;
+            border-radius: 5px;
+            background: #1a202b;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        #instruction {
+            flex: 1;
+            min-height: 120px;
+            margin-bottom: 12px;
+        }
+
+        #explanation {
+            color: #a5c2ff;
+            background: #0c1017;
+            min-height: 80px;
+            display: none;
+            margin-bottom: 12px;
+        }
+
+        #hazard {
+            display: none;
+            padding: 14px;
+            margin-top: 12px;
+            background: #4a1717;
+            border: 1px solid #ff5555;
+            color: white;
+            font-weight: bold;
+        }
+
+        #secondary {
+            margin-top: 12px;
+            color: #9da8b8;
+            font-size: 12px;
+        }
+
+        @media (max-width: 800px) {
+            #panel {
+                width: 280px;
+                padding-left: 14px;
+                padding-right: 14px;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div id="top-bar">
-        <strong>Project 11 — One Step at a Time</strong>
-        <span id="status" style="color: #6b7280;">elapsed 0 ms</span>
+
+    <div id="machine">
+
+        <div id="topbar">
+            <strong>Project 11 — PC Training</strong>
+            <span id="status">Connecting...</span>
+        </div>
+
+        <canvas id="pc-view"></canvas>
+
+        <div id="hint">
+            Drag to rotate · Scroll to zoom · Click components to interact
+        </div>
+
     </div>
 
-    <div id="machine-canvas">
-        <!-- Update src to match your actual asset path -->
-        <img id="machine-image" src="/assets/images/training_panel_tp01.png" alt="Machine Panel">
-    </div>
+    <aside id="panel">
 
-    <div id="guidance-panel" style="margin-top: 50px;">
-        <h2 style="margin: 0 0 4px 0; font-size: 16px;">Instructions</h2>
-        <p id="step-label">Step - / -</p>
-        <div id="instr" class="text-box">Loading...</div>
-        <div id="why" class="text-box" style="display: none;">Explanation goes here.</div>
-    </div>
+        <h2 style="font-size:17px; margin:0">Instructions</h2>
 
-    <script>
-        // --- 1. State & DOM Elements ---
-        const img = document.getElementById('machine-image');
-        const canvas = document.getElementById('machine-canvas');
+        <p id="step">Step - / -</p>
+
+        <div id="selected">PC COMPONENTS</div>
+
+        <div id="instruction" class="text-box">
+            Connecting to the training session...
+        </div>
+
+        <div id="explanation" class="text-box"></div>
+
+        <div id="hazard"></div>
+
+        <div id="secondary"></div>
+
+    </aside>
+
+
+    <script type="module">
+
+        import * as THREE from 'three';
+
+        import { OrbitControls } from
+            'three/addons/controls/OrbitControls.js';
+
+
+        // ============================================================
+        // 1. HTML ELEMENTS AND APPLICATION STATE
+        // ============================================================
+
+        const canvas = document.getElementById('pc-view');
+        const container = document.getElementById('machine');
+
+        const instructionElement =
+            document.getElementById('instruction');
+
+        const stepElement =
+            document.getElementById('step');
+
+        const statusElement =
+            document.getElementById('status');
+
+        const selectedElement =
+            document.getElementById('selected');
+
+        const explanationElement =
+            document.getElementById('explanation');
+
+        const hazardElement =
+            document.getElementById('hazard');
+
+        const secondaryElement =
+            document.getElementById('secondary');
+
         let currentState = null;
 
-        // --- 2. 50ms Polling Loop (Replaces root.after) ---
-        async function tick() {
+
+        // ============================================================
+        // 2. THREE.JS SCENE
+        // ============================================================
+
+        const scene = new THREE.Scene();
+
+        scene.background = new THREE.Color(0x171c25);
+
+        const camera = new THREE.PerspectiveCamera(
+            45,
+            1,
+            0.1,
+            100
+        );
+
+        camera.position.set(6, 4, 8);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true
+        });
+
+        renderer.setPixelRatio(
+            Math.min(window.devicePixelRatio, 2)
+        );
+
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
+
+
+        // ============================================================
+        // 3. CAMERA CONTROLS
+        // ============================================================
+
+        const controls = new OrbitControls(
+            camera,
+            canvas
+        );
+
+        controls.target.set(0, 0, 0);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+
+        controls.minDistance = 5;
+        controls.maxDistance = 15;
+
+        controls.maxPolarAngle = Math.PI * 0.85;
+
+
+        // ============================================================
+        // 4. LIGHTING
+        // ============================================================
+
+        scene.add(
+            new THREE.HemisphereLight(
+                0xffffff,
+                0x303846,
+                1.8
+            )
+        );
+
+        const mainLight = new THREE.DirectionalLight(
+            0xffffff,
+            3
+        );
+
+        mainLight.position.set(5, 8, 7);
+        mainLight.castShadow = true;
+
+        mainLight.shadow.mapSize.width = 2048;
+        mainLight.shadow.mapSize.height = 2048;
+
+        scene.add(mainLight);
+
+        const fillLight = new THREE.DirectionalLight(
+            0x8aaaff,
+            1.2
+        );
+
+        fillLight.position.set(-5, 3, -5);
+        scene.add(fillLight);
+
+        const warmLight = new THREE.PointLight(
+            0xffd080,
+            18,
+            12
+        );
+
+        warmLight.position.set(3, 2, 4);
+        scene.add(warmLight);
+
+
+        // ============================================================
+        // 5. FLOOR
+        // ============================================================
+
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(30, 30),
+            new THREE.MeshStandardMaterial({
+                color: 0x202530,
+                roughness: 0.85
+            })
+        );
+
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -2.35;
+        floor.receiveShadow = true;
+
+        scene.add(floor);
+
+
+        // ============================================================
+        // 6. MATERIALS
+        // ============================================================
+
+        const mat = {
+
+            case: new THREE.MeshStandardMaterial({
+                color: 0x252c37,
+                metalness: 0.7,
+                roughness: 0.35
+            }),
+
+            dark: new THREE.MeshStandardMaterial({
+                color: 0x090d13,
+                metalness: 0.3,
+                roughness: 0.5
+            }),
+
+            board: new THREE.MeshStandardMaterial({
+                color: 0x174536,
+                metalness: 0.2,
+                roughness: 0.65
+            }),
+
+            metal: new THREE.MeshStandardMaterial({
+                color: 0x8995a5,
+                metalness: 0.8,
+                roughness: 0.3
+            }),
+
+            silver: new THREE.MeshStandardMaterial({
+                color: 0xb9c1cb,
+                metalness: 0.85,
+                roughness: 0.25
+            }),
+
+            gpu: new THREE.MeshStandardMaterial({
+                color: 0x353d49,
+                metalness: 0.65,
+                roughness: 0.3
+            }),
+
+            fan: new THREE.MeshStandardMaterial({
+                color: 0x111722,
+                metalness: 0.35,
+                roughness: 0.5,
+                side: THREE.DoubleSide
+            }),
+
+            gold: new THREE.MeshStandardMaterial({
+                color: 0xFFD700,
+                metalness: 0.5,
+                roughness: 0.3
+            }),
+
+            rgb: new THREE.MeshStandardMaterial({
+                color: 0x5da9ed,
+                emissive: 0x164d91,
+                emissiveIntensity: 0.65,
+                metalness: 0.35,
+                roughness: 0.3
+            }),
+
+            glass: new THREE.MeshPhysicalMaterial({
+                color: 0x9bb8d8,
+                transparent: true,
+                opacity: 0.18,
+                roughness: 0.08,
+                metalness: 0.1,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            })
+
+        };
+
+
+        // ============================================================
+        // 7. COMPONENT MANAGEMENT
+        // ============================================================
+
+        const components = {};
+
+        const originalPositions = new Map();
+
+        const movingParts = new Map();
+
+        let removedPartCount = 0;
+
+
+        function group(id, position = [0, 0, 0]) {
+
+            const object = new THREE.Group();
+
+            object.name = id;
+            object.userData.componentId = id;
+
+            object.position.set(...position);
+
+            scene.add(object);
+
+            components[id] = object;
+
+            return object;
+        }
+
+
+        function box(
+            parent,
+            size,
+            position,
+            material,
+            componentId = parent.userData.componentId
+        ) {
+
+            const mesh = new THREE.Mesh(
+                new THREE.BoxGeometry(...size),
+                material
+            );
+
+            mesh.position.set(...position);
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            mesh.userData.componentId = componentId;
+
+            parent.add(mesh);
+
+            return mesh;
+        }
+
+
+        function cylinder(
+            parent,
+            radius,
+            depth,
+            position,
+            material,
+            componentId = parent.userData.componentId
+        ) {
+
+            const mesh = new THREE.Mesh(
+                new THREE.CylinderGeometry(
+                    radius,
+                    radius,
+                    depth,
+                    32
+                ),
+                material
+            );
+
+            mesh.position.set(...position);
+
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            mesh.userData.componentId = componentId;
+
+            parent.add(mesh);
+
+            return mesh;
+        }
+
+
+        // ============================================================
+        // 8. FAN CREATION
+        // ============================================================
+
+        function makeFan(
+            id,
+            position,
+            radius = 0.42,
+            orientation = 'front'
+        ) {
+
+            const fan = group(id, position);
+
+            // Rotate the fan when it is mounted horizontally.
+            if (orientation === 'top') {
+                fan.rotation.x = -Math.PI / 2;
+            }
+
+            if (orientation === 'rear') {
+                fan.rotation.y = Math.PI;
+            }
+
+            // Outer fan frame.
+            const frame = new THREE.Mesh(
+                new THREE.TorusGeometry(
+                    radius,
+                    0.055,
+                    10,
+                    40
+                ),
+                mat.metal
+            );
+
+            frame.position.z = 0.04;
+            frame.userData.componentId = id;
+
+            fan.add(frame);
+
+
+            // Fan blades.
+            for (let i = 0; i < 7; i++) {
+
+                const blade = box(
+                    fan,
+                    [
+                        radius * 0.65,
+                        radius * 0.19,
+                        0.045
+                    ],
+                    [
+                        radius * 0.34,
+                        0,
+                        0.06
+                    ],
+                    mat.fan
+                );
+
+                blade.rotation.z =
+                    i * (Math.PI * 2 / 7);
+
+            }
+
+
+            // Central motor.
+            const hub = cylinder(
+                fan,
+                radius * 0.22,
+                0.13,
+                [0, 0, 0.09],
+                mat.dark
+            );
+
+            hub.rotation.x = Math.PI / 2;
+
+
+            // Gold centre.
+            const centre = new THREE.Mesh(
+                new THREE.CircleGeometry(
+                    radius * 0.10,
+                    24
+                ),
+                mat.gold
+            );
+
+            centre.position.z = 0.17;
+            centre.userData.componentId = id;
+
+            fan.add(centre);
+
+
+            // Four mounting screws.
+            for (const x of [-1, 1]) {
+                for (const y of [-1, 1]) {
+
+                    cylinder(
+                        fan,
+                        0.035,
+                        0.035,
+                        [
+                            x * radius * 0.83,
+                            y * radius * 0.83,
+                            0.06
+                        ],
+                        mat.silver
+                    ).rotation.x = Math.PI / 2;
+
+                }
+            }
+
+            return fan;
+        }
+
+
+        // ============================================================
+        // 9. CABLE CREATION
+        // ============================================================
+
+        function makeCable(id, points, radius = 0.035) {
+
+            const cableGroup = group(id);
+
+            const curve = new THREE.CatmullRomCurve3(
+                points.map(point =>
+                    new THREE.Vector3(...point)
+                )
+            );
+
+            const cable = new THREE.Mesh(
+                new THREE.TubeGeometry(
+                    curve,
+                    40,
+                    radius,
+                    10,
+                    false
+                ),
+                mat.dark
+            );
+
+            cable.castShadow = true;
+            cable.userData.componentId = id;
+
+            cableGroup.add(cable);
+
+            return cableGroup;
+        }
+
+
+        // ============================================================
+        // 10. PC CASE
+        // ============================================================
+
+        const pcCase = group('case');
+
+        // Rear panel.
+        box(
+            pcCase,
+            [3, 4.5, 0.12],
+            [0, 0, -1.08],
+            mat.dark
+        );
+
+        // Top and bottom.
+        box(
+            pcCase,
+            [3, 0.12, 2.2],
+            [0, 2.2, 0],
+            mat.case
+        );
+
+        box(
+            pcCase,
+            [3, 0.12, 2.2],
+            [0, -2.2, 0],
+            mat.case
+        );
+
+        // Left and right rails.
+        box(
+            pcCase,
+            [0.12, 4.5, 2.2],
+            [-1.44, 0, 0],
+            mat.case
+        );
+
+        box(
+            pcCase,
+            [0.12, 4.5, 2.2],
+            [1.44, 0, 0],
+            mat.case
+        );
+
+
+        // ============================================================
+        // 11. CASE FEET
+        // ============================================================
+
+        const feet = group('case_feet');
+
+        for (const x of [-1.1, 1.1]) {
+
+            box(
+                feet,
+                [0.65, 0.16, 0.55],
+                [x, -2.31, -0.65],
+                mat.dark
+            );
+
+        }
+
+
+        // ============================================================
+        // 12. MOTHERBOARD
+        // ============================================================
+
+        const motherboard = group('motherboard');
+
+        box(
+            motherboard,
+            [2.05, 3.35, 0.12],
+            [-0.05, 0, -0.86],
+            mat.board
+        );
+
+
+        // Motherboard traces and small components.
+        for (let i = 0; i < 5; i++) {
+
+            box(
+                motherboard,
+                [0.22, 0.12, 0.035],
+                [
+                    -0.85 + i * 0.38,
+                    -1.25,
+                    -0.77
+                ],
+                mat.metal
+            );
+
+        }
+
+
+        // Motherboard capacitors.
+        const capacitors = group('motherboard_capacitors');
+
+        for (let i = 0; i < 6; i++) {
+
+            cylinder(
+                capacitors,
+                0.055,
+                0.16,
+                [
+                    -0.8 + (i % 3) * 0.22,
+                    1.2 - Math.floor(i / 3) * 0.28,
+                    -0.68
+                ],
+                mat.silver
+            );
+
+        }
+
+
+        // ============================================================
+        // 13. CPU
+        // ============================================================
+
+        const cpu = group('cpu');
+
+        box(
+            cpu,
+            [0.58, 0.58, 0.12],
+            [-0.38, 0.75, -0.72],
+            mat.silver
+        );
+
+        box(
+            cpu,
+            [0.38, 0.38, 0.05],
+            [-0.38, 0.75, -0.63],
+            mat.dark
+        );
+
+
+        // ============================================================
+        // 14. CPU COOLER AND HEATSINK
+        // ============================================================
+
+        const cooler = group('cpu_cooler');
+
+        box(
+            cooler,
+            [0.82, 0.82, 0.35],
+            [-0.38, 0.75, -0.38],
+            mat.metal
+        );
+
+        // Individual heatsink fins.
+        for (let i = 0; i < 9; i++) {
+
+            box(
+                cooler,
+                [0.84, 0.045, 0.38],
+                [
+                    -0.38,
+                    0.42 + i * 0.08,
+                    -0.35
+                ],
+                mat.silver
+            );
+
+        }
+
+
+        // CPU fan is a separate selectable component.
+        makeFan(
+            'cpu_fan',
+            [-0.38, 0.75, -0.12],
+            0.33,
+            'front'
+        );
+
+
+        // ============================================================
+        // 15. RAM
+        // ============================================================
+
+        const ram = group('ram');
+
+        for (let i = 0; i < 2; i++) {
+
+            const x = 0.28 + i * 0.28;
+
+            // RAM body.
+            box(
+                ram,
+                [0.18, 1.05, 0.12],
+                [x, 0.72, -0.56],
+                mat.metal
+            );
+
+            // Dark label area.
+            box(
+                ram,
+                [0.13, 0.85, 0.035],
+                [x, 0.72, -0.48],
+                mat.dark
+            );
+
+            // Gold contact strip.
+            box(
+                ram,
+                [0.15, 0.06, 0.025],
+                [x, 0.18, -0.46],
+                mat.gold
+            );
+
+        }
+
+
+        // ============================================================
+        // 16. VRM HEATSINK
+        // ============================================================
+
+        const vrm = group('vrm_heatsink');
+
+        box(
+            vrm,
+            [0.35, 0.48, 0.72],
+            [-1.05, 1.35, -0.67],
+            mat.metal
+        );
+
+        for (let i = 0; i < 6; i++) {
+
+            box(
+                vrm,
+                [0.37, 0.045, 0.74],
+                [
+                    -1.05,
+                    1.15 + i * 0.075,
+                    -0.67
+                ],
+                mat.silver
+            );
+
+        }
+
+
+        // ============================================================
+        // 17. CHIPSET HEATSINK
+        // ============================================================
+
+        const chipset = group('chipset_heatsink');
+
+        box(
+            chipset,
+            [0.48, 0.42, 0.16],
+            [-0.90, -0.90, -0.62],
+            mat.metal
+        );
+
+        box(
+            chipset,
+            [0.30, 0.24, 0.04],
+            [-0.90, -0.90, -0.51],
+            mat.dark
+        );
+
+
+        // ============================================================
+        // 18. GRAPHICS CARD
+        // ============================================================
+
+        const gpu = group('gpu');
+
+        // GPU body.
+        box(
+            gpu,
+            [2.0, 0.48, 0.55],
+            [-0.05, -0.35, -0.10],
+            mat.gpu
+        );
+
+        // Backplate.
+        box(
+            gpu,
+            [1.92, 0.055, 0.48],
+            [-0.05, -0.08, -0.10],
+            mat.metal
+        );
+
+        // Gold detail.
+        box(
+            gpu,
+            [1.65, 0.035, 0.025],
+            [-0.05, -0.08, 0.15],
+            mat.gold
+        );
+
+        // PCIe connector.
+        box(
+            gpu,
+            [1.25, 0.08, 0.08],
+            [-0.05, -0.64, -0.10],
+            mat.gold
+        );
+
+
+        // Three individual graphics-card fans.
+        makeFan(
+            'gpu_fan_1',
+            [-0.68, -0.35, 0.22],
+            0.19
+        );
+
+        makeFan(
+            'gpu_fan_2',
+            [-0.05, -0.35, 0.22],
+            0.19
+        );
+
+        makeFan(
+            'gpu_fan_3',
+            [0.58, -0.35, 0.22],
+            0.19
+        );
+
+
+        // ============================================================
+        // 19. PCIe SLOTS
+        // ============================================================
+
+        const pcieSlots = group('pcie_slots');
+
+        box(
+            pcieSlots,
+            [1.55, 0.12, 0.13],
+            [-0.05, -0.95, -0.72],
+            mat.dark
+        );
+
+        box(
+            pcieSlots,
+            [1.20, 0.12, 0.13],
+            [-0.05, -1.25, -0.72],
+            mat.dark
+        );
+
+
+        // ============================================================
+        // 20. M.2 NVME SSD
+        // ============================================================
+
+        const nvme = group('nvme_ssd');
+
+        box(
+            nvme,
+            [0.95, 0.16, 0.10],
+            [-0.50, 0.05, -0.62],
+            mat.dark
+        );
+
+        box(
+            nvme,
+            [0.52, 0.11, 0.035],
+            [-0.56, 0.05, -0.55],
+            mat.metal
+        );
+
+
+        // ============================================================
+        // 21. 2.5-INCH SSD
+        // ============================================================
+
+        const ssd = group('storage_ssd');
+
+        box(
+            ssd,
+            [0.72, 0.42, 0.12],
+            [-0.62, -1.45, -0.45],
+            mat.metal
+        );
+
+        box(
+            ssd,
+            [0.65, 0.35, 0.035],
+            [-0.62, -1.45, -0.37],
+            mat.dark
+        );
+
+
+        // ============================================================
+        // 22. POWER SUPPLY
+        // ============================================================
+
+        const psu = group('psu');
+
+        box(
+            psu,
+            [1.1, 0.72, 0.85],
+            [0.82, -1.55, -0.45],
+            mat.dark
+        );
+
+        box(
+            psu,
+            [0.85, 0.035, 0.65],
+            [0.82, -1.55, 0.0],
+            mat.metal
+        );
+        // Switch mounting frame.
+        box(
+            psuSwitch,
+            [0.28, 0.18, 0.08],
+            [1.05, -1.55, -1.16],
+            mat.metal
+        );
+
+        // Switch lever.
+        const psuLever = box(
+            psuSwitch,
+            [0.12, 0.13, 0.06],
+            [1.05, -1.55, -1.10],
+            mat.gold
+        );
+
+        psuLever.rotation.x = 0.25;
+
+        // Save the lever so the toggle action can animate it.
+        psuSwitch.userData.toggleLever = psuLever;
+
+
+        // PSU fan.
+        makeFan(
+            'psu_fan',
+            [0.82, -1.55, 0.08],
+            0.23
+        );
+
+
+        // ============================================================
+        // 23. CASE FANS
+        // ============================================================
+
+        makeFan(
+            'front_fan_1',
+            [-0.88, 1.45, 0.78],
+            0.43
+        );
+
+        makeFan(
+            'front_fan_2',
+            [-0.88, 0.0, 0.78],
+            0.43
+        );
+
+        makeFan(
+            'front_fan_3',
+            [-0.88, -1.40, 0.78],
+            0.43
+        );
+
+        makeFan(
+            'rear_fan',
+            [-0.95, 1.45, -0.78],
+            0.40,
+            'rear'
+        );
+
+        makeFan(
+            'top_fan_1',
+            [-0.35, 1.95, -0.25],
+            0.33,
+            'top'
+        );
+
+        makeFan(
+            'top_fan_2',
+            [0.65, 1.95, -0.25],
+            0.33,
+            'top'
+        );
+
+
+        // ============================================================
+        // 24. POWER AND DATA CABLES
+        // ============================================================
+
+        makeCable(
+            'cable_24pin',
+            [
+                [0.90, 1.00, -0.45],
+                [0.70, 0.85, -0.25],
+                [0.55, 0.40, -0.20],
+                [0.45, 0.20, -0.50]
+            ],
+            0.045
+        );
+
+        makeCable(
+            'cable_cpu',
+            [
+                [0.95, 1.90, -0.65],
+                [0.70, 1.75, -0.50],
+                [0.20, 1.55, -0.50]
+            ],
+            0.04
+        );
+
+        makeCable(
+            'cable_gpu',
+            [
+                [0.70, -0.15, -0.15],
+                [0.90, -0.05, 0.15],
+                [0.75, -0.30, 0.15]
+            ],
+            0.045
+        );
+
+        // ============================================================
+        // REMOVABLE PSU POWER CABLE
+        // ============================================================
+
+        const powerCable = group('power_cable');
+
+        // Cable running from the PSU to the outside of the case.
+        const powerCableCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0.82, -1.55, -1.20),
+            new THREE.Vector3(0.65, -1.60, -1.55),
+            new THREE.Vector3(0.80, -1.75, -1.90),
+            new THREE.Vector3(1.15, -1.90, -2.20)
+        ]);
+
+        const powerCableMesh = new THREE.Mesh(
+            new THREE.TubeGeometry(
+                powerCableCurve,
+                40,
+                0.055,
+                10,
+                false
+            ),
+            mat.dark
+        );
+
+        powerCableMesh.userData.componentId = 'power_cable';
+        powerCableMesh.castShadow = true;
+
+        powerCable.add(powerCableMesh);
+
+        // Plug body.
+        box(
+            powerCable,
+            [0.30, 0.22, 0.18],
+            [0.82, -1.55, -1.25],
+            mat.dark
+        );
+
+        // Plug metal detail.
+        box(
+            powerCable,
+            [0.12, 0.12, 0.05],
+            [0.82, -1.55, -1.36],
+            mat.silver
+        );
+
+
+
+        // ============================================================
+        // 25. FRONT I/O PORTS
+        // ============================================================
+
+        const frontIO = group('front_io');
+
+        for (let i = 0; i < 3; i++) {
+
+            box(
+                frontIO,
+                [0.18, 0.08, 0.035],
+                [
+                    0.75 + i * 0.22,
+                    1.90,
+                    1.02
+                ],
+                mat.metal
+            );
+
+        }
+
+        cylinder(
+            frontIO,
+            0.055,
+            0.04,
+            [1.35, 1.90, 1.02],
+            mat.gold
+        );
+
+
+        // ============================================================
+        // 26. REAR I/O PORTS
+        // ============================================================
+
+        const rearIO = group('rear_io');
+
+        for (let i = 0; i < 6; i++) {
+
+            box(
+                rearIO,
+                [0.08, 0.16, 0.22],
+                [
+                    -1.40,
+                    -0.95 + i * 0.30,
+                    -0.90
+                ],
+                mat.dark
+            );
+
+        }
+
+
+        // ============================================================
+        // 27. POWER BUTTON
+        // ============================================================
+
+        const powerButton = group('power_button');
+
+        const buttonMesh = cylinder(
+            powerButton,
+            0.12,
+            0.08,
+            [1.05, 1.90, 1.08],
+            mat.gold
+        );
+
+        buttonMesh.rotation.x = Math.PI / 2;
+
+
+        // ============================================================
+        // 28. REMOVABLE GLASS SIDE PANEL
+        // ============================================================
+
+        const glass = group('glass_panel');
+
+        const glassMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(
+                2.85,
+                4.3,
+                0.035
+            ),
+            mat.glass
+        );
+
+        glassMesh.position.set(0, 0, 1.08);
+        glassMesh.userData.componentId = 'glass_panel';
+
+        glass.add(glassMesh);
+
+
+        // Metal border around the glass.
+        box(
+            glass,
+            [2.95, 0.06, 0.07],
+            [0, 2.15, 1.10],
+            mat.case
+        );
+
+        box(
+            glass,
+            [2.95, 0.06, 0.07],
+            [0, -2.15, 1.10],
+            mat.case
+        );
+
+        box(
+            glass,
+            [0.06, 4.3, 0.07],
+            [-1.45, 0, 1.10],
+            mat.case
+        );
+
+        box(
+            glass,
+            [0.06, 4.3, 0.07],
+            [1.45, 0, 1.10],
+            mat.case
+        );
+
+
+        // Glass panel screws.
+        for (const x of [-1.30, 1.30]) {
+            for (const y of [-2.0, 2.0]) {
+
+                cylinder(
+                    glass,
+                    0.045,
+                    0.04,
+                    [x, y, 1.15],
+                    mat.gold
+                );
+
+            }
+        }
+
+
+
+        // ============================================================
+        // SAVE ORIGINAL POSITIONS AND CREATE EMPTY SLOT HITBOXES
+        // ============================================================
+
+        const originalPositions = new Map();
+        const slotTargets = {};
+        const removedComponents = new Set();
+
+        // The PSU starts switched on.
+        const toggleStates = new Map([
+            ['psu_switch', true]
+        ]);
+
+        scene.updateMatrixWorld(true);
+
+        for (const [id, object] of Object.entries(components)) {
+
+            originalPositions.set(id, object.position.clone());
+
+            // Calculate the original space occupied by this component.
+            const bounds = new THREE.Box3().setFromObject(object);
+
+            const center = bounds.getCenter(new THREE.Vector3());
+            const size = bounds.getSize(new THREE.Vector3());
+
+            // Make the clickable empty space slightly larger.
+            size.add(new THREE.Vector3(0.18, 0.18, 0.18));
+
+            size.x = Math.max(size.x, 0.45);
+            size.y = Math.max(size.y, 0.45);
+            size.z = Math.max(size.z, 0.30);
+
+            // Invisible box that represents the empty mounting position.
+            const slot = new THREE.Mesh(
+                new THREE.BoxGeometry(size.x, size.y, size.z),
+                new THREE.MeshBasicMaterial({
+                    transparent: true,
+                    opacity: 0,
+                    colorWrite: false,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                })
+            );
+
+            slot.position.copy(center);
+            slot.userData.componentId = id;
+
+            scene.add(slot);
+
+            slotTargets[id] = slot;
+        }
+
+
+        // ============================================================
+        // REMOVE / INSTALL / TOGGLE COMPONENTS
+        // ============================================================
+
+        function applyVisualAction(id, action) {
+
+            const object = components[id];
+
+            if (!object) return;
+
+            if (action === 'remove') {
+
+                // Hide the real component.
+                object.visible = false;
+
+                // Remember that its mounting position is empty.
+                removedComponents.add(id);
+
+            }
+
+            else if (action === 'install') {
+
+                // Return the component to its original position.
+                object.position.copy(originalPositions.get(id));
+
+                // Make it visible again.
+                object.visible = true;
+
+                removedComponents.delete(id);
+
+            }
+
+            else if (action === 'toggle') {
+
+                // Handle the PSU on/off rocker.
+                const currentState = toggleStates.get(id) ?? false;
+
+                const newState = !currentState;
+
+                toggleStates.set(id, newState);
+
+                const lever = object.userData.toggleLever;
+
+                if (lever) {
+                    lever.rotation.x = newState ? 0.25 : -0.25;
+                }
+
+            }
+
+            // Recreate the highlight after the component changes.
+            clearHighlight();
+        }
+
+        // ============================================================
+        // 31. RAYCASTING
+        // ============================================================
+
+        const raycaster = new THREE.Raycaster();
+
+        const pointer = new THREE.Vector2();
+
+        let targetId = null;
+        let hoveredId = null;
+        let highlightedId = null;
+
+        let highlightBox = null;
+
+
+        function componentIdFromObject(object) {
+
+            let current = object;
+
+            while (current) {
+
+                if (current.userData.componentId) {
+                    return current.userData.componentId;
+                }
+
+                current = current.parent;
+            }
+
+            return null;
+        }
+
+
+
+        function getComponentAtPointer(event) {
+
+            const rect = canvas.getBoundingClientRect();
+
+            pointer.x =
+                ((event.clientX - rect.left) / rect.width) * 2 - 1;
+
+            pointer.y =
+                -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(pointer, camera);
+
+            // Only visible components can normally be selected.
+            const pickObjects = Object.values(components)
+                .filter(object => object.visible);
+
+            // An empty slot is selectable only when the current
+            // instruction asks us to install that component.
+            if (
+                currentState &&
+                currentState.expected_action === 'install' &&
+                targetId &&
+                removedComponents.has(targetId)
+            ) {
+                pickObjects.push(slotTargets[targetId]);
+            }
+
+            const hits = raycaster.intersectObjects(
+                pickObjects,
+                true
+            );
+
+            for (const hit of hits) {
+
+                const id = componentIdFromObject(hit.object);
+
+                if (id) {
+                    return id;
+                }
+
+            }
+
+            return null;
+        }
+
+
+
+        // ============================================================
+        // 32. GOLD HIGHLIGHT
+        // ============================================================
+
+        function clearHighlight() {
+
+            if (!highlightBox) return;
+
+            scene.remove(highlightBox);
+
+            highlightBox.geometry.dispose();
+            highlightBox.material.dispose();
+
+            highlightBox = null;
+            highlightedId = null;
+
+        }
+
+
+        function updateHighlight() {
+
+            const id = hoveredId || targetId;
+
+            if (id === highlightedId) return;
+
+            clearHighlight();
+
+            const isEmptySlot =
+                id &&
+                removedComponents.has(id) &&
+                currentState?.expected_action === 'install';
+
+            const object = id
+                ? (isEmptySlot ? slotTargets[id] : components[id])
+                : null;
+
+            if (
+                object &&
+                (isEmptySlot || object.visible)
+            ) {
+
+                highlightBox = new THREE.BoxHelper(
+                    object,
+                    0xFFD700
+                );
+
+                highlightBox.material.depthTest = false;
+                highlightBox.material.transparent = true;
+                highlightBox.material.opacity = 0.95;
+
+                scene.add(highlightBox);
+
+                highlightedId = id;
+
+            }
+
+            selectedElement.textContent = id
+                ? id.replaceAll('_', ' ').toUpperCase()
+                : 'PC COMPONENTS';
+
+        }
+
+
+        canvas.addEventListener('pointermove', (event) => {
+
+            const id = getComponentAtPointer(event);
+
+            if (id !== hoveredId) {
+                hoveredId = id;
+                updateHighlight();
+            }
+
+        });
+
+
+        canvas.addEventListener('pointerleave', () => {
+
+            hoveredId = null;
+            updateHighlight();
+
+        });
+
+
+        // ============================================================
+        // 33. CLICK DETECTION
+        // ============================================================
+
+        let pointerStart = null;
+
+        canvas.addEventListener('pointerdown', (event) => {
+
+            pointerStart = {
+                x: event.clientX,
+                y: event.clientY
+            };
+
+        });
+
+
+        canvas.addEventListener('pointerup', async (event) => {
+
+            if (!pointerStart) return;
+
+            const distance = Math.hypot(
+                event.clientX - pointerStart.x,
+                event.clientY - pointerStart.y
+            );
+
+            pointerStart = null;
+
+            // Do not treat camera rotation as a component click.
+            if (distance > 5) return;
+
+            await handleComponentClick(event);
+
+        });
+
+
+        // ============================================================
+        // 34. SEND CLICK TO PYTHON SERVER
+        // ============================================================
+
+        async function handleComponentClick(event) {
+
+            if (
+                !currentState ||
+                currentState.status !== 'running'
+            ) {
+                return;
+            }
+
+            const id = getComponentAtPointer(event);
+
+            if (!id) return;
+
+            // The procedure must contain the clicked component.
+            const knownComponent =
+                currentState.components?.some(
+                    component => component.id === id
+                );
+
+            if (!knownComponent) return;
+
+            const previousState = currentState;
+
             try {
+
+                const clickResponse = await fetch('/click', {
+
+                    method: 'POST',
+
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+
+                    body: JSON.stringify({
+                        component_id: id,
+                        xn: 0.5,
+                        yn: 0.5
+                    })
+
+                });
+
+                if (!clickResponse.ok) {
+                    throw new Error('Click request failed');
+                }
+
+
+                // Ask Python for the state after the click.
+                const stateResponse = await fetch('/state');
+
+                if (!stateResponse.ok) {
+                    throw new Error('Could not retrieve updated state');
+                }
+
+                const nextState = await stateResponse.json();
+
+
+                // The controller advances the step only after accepting
+                // the correct component click.
+                const accepted =
+                    nextState.step_index > previousState.step_index ||
+                    nextState.status === 'completed';
+
+
+                if (accepted) {
+                    applyVisualAction(
+                        id,
+                        previousState.expected_action
+                    );
+                }
+
+
+                // A hazard response does not advance the normal step.
+                // Therefore, it does not move the clicked component.
+
+                currentState = nextState;
+
+                updateUI(nextState);
+
+            } catch (error) {
+
+                console.error(
+                    'Component interaction failed:',
+                    error
+                );
+
+                statusElement.textContent = 'Interaction error';
+
+            }
+
+        }
+
+
+        // ============================================================
+        // 35. UPDATE INSTRUCTION PANEL
+        // ============================================================
+
+        function updateUI(state) {
+
+            if (!state) return;
+
+            if (state.status === 'completed') {
+
+                instructionElement.textContent =
+                    'Training task completed!';
+
+                stepElement.textContent = 'Completed';
+
+                targetId = null;
+                updateHighlight();
+
+                return;
+            }
+
+
+            if (state.status === 'aborted') {
+
+                instructionElement.textContent =
+                    'Training task aborted.';
+
+                stepElement.textContent = 'Aborted';
+
+                targetId = null;
+                updateHighlight();
+
+                return;
+            }
+
+
+            stepElement.textContent =
+                `Step ${state.step_index + 1} / ${state.total_steps}`;
+
+            instructionElement.textContent =
+                state.instruction || 'Waiting for instructions...';
+
+
+            statusElement.textContent =
+                `Elapsed: ${state.elapsed_ms ?? 0} ms`;
+
+
+            // Secondary task information.
+            const secondary = state.secondary || {};
+
+            secondaryElement.textContent =
+                `Secondary task: ${Number(secondary.value ?? 0).toFixed(2)} | ` +
+                `Corrections: ${secondary.corrections ?? 0}`;
+
+
+            // Explanatory condition.
+            if (
+                state.condition === 'C' &&
+                state.explanation
+            ) {
+
+                explanationElement.style.display = 'block';
+
+                explanationElement.textContent =
+                    state.explanation;
+
+            } else {
+
+                explanationElement.style.display = 'none';
+
+            }
+
+
+            // Hazard information.
+            const hazard = state.hazard || {};
+
+            if (hazard.active) {
+
+                hazardElement.style.display = 'block';
+
+                hazardElement.textContent =
+                    hazard.message || 'Emergency response required.';
+
+            } else if (hazard.responded) {
+
+                hazardElement.style.display = 'block';
+
+                hazardElement.textContent = hazard.correct
+                    ? 'Correct emergency response.'
+                    : 'Incorrect emergency response.';
+
+            } else {
+
+                hazardElement.style.display = 'none';
+
+            }
+
+
+            // Highlight the emergency response component during a hazard.
+            if (hazard.active) {
+
+                targetId = hazard.correct_component_id;
+
+            } else {
+
+                targetId = state.highlight?.component_id ?? null;
+
+            }
+
+            updateHighlight();
+
+        }
+
+
+        // ============================================================
+        // 36. POLL PYTHON FOR CURRENT TASK STATE
+        // ============================================================
+
+        async function tick() {
+
+            try {
+
                 const response = await fetch('/state');
+
+                if (!response.ok) {
+                    throw new Error('Server returned an error');
+                }
+
                 currentState = await response.json();
 
-                if (currentState.status === 'running') {
-                    updateUI(currentState);
-                } else if (currentState.status === 'completed') {
-                    document.getElementById('instr').innerText = "Condition Complete!";
+                updateUI(currentState);
+
+            } catch (error) {
+
+                console.error(
+                    'Could not contact server:',
+                    error
+                );
+
+                statusElement.textContent =
+                    'Server connection error';
+
+            }
+
+            setTimeout(tick, 150);
+
+        }
+
+
+        // ============================================================
+        // 37. SECONDARY TASK — SPACEBAR
+        // ============================================================
+
+        document.addEventListener('keydown', async (event) => {
+
+            if (
+                event.code === 'Space' &&
+                !event.repeat
+            ) {
+
+                event.preventDefault();
+
+                try {
+
+                    await fetch('/secondary', {
+                        method: 'POST'
+                    });
+
+                } catch (error) {
+
+                    console.error(
+                        'Secondary task request failed:',
+                        error
+                    );
+
                 }
-            } catch (e) {
-                console.error("Failed to fetch state:", e);
-            }
-            setTimeout(tick, 50); // 50ms loop
-        }
 
-        // --- 3. UI Update Logic ---
-        function updateUI(state) {
-            // Update text
-            document.getElementById('step-label').innerText = `Step ${state.step_index + 1} / ${state.total_steps}`;
-            document.getElementById('instr').innerText = state.instruction;
-            document.getElementById('status').innerText = `elapsed ${state.elapsed_ms} ms | Secondary: ${state.secondary.value.toFixed(2)} (corr ${state.secondary.corrections}/${state.secondary.opportunities})`;
-
-            // Update explanation box visibility
-            const whyBox = document.getElementById('why');
-            if (state.condition === 'C_EXPLANATORY' && state.explanation) {
-                whyBox.style.display = 'block';
-                whyBox.innerText = state.explanation;
-            } else {
-                whyBox.style.display = 'none';
             }
 
-            // Update Highlight Animation (Replaces norm_to_display_rect)
-            clearHighlights();
-            if (state.condition !== 'A_MANUAL' && state.highlight.bounds) {
-                drawHighlight(state.highlight.bounds, state.highlight.label, state.condition);
-            }
-        }
-
-        function clearHighlights() {
-            document.querySelectorAll('.highlight').forEach(el => el.remove());
-        }
-
-        function drawHighlight(bounds, label, condition) {
-            // bounds are normalized [x1, y1, x2, y2] (0.0 to 1.0)
-            const imgRect = img.getBoundingClientRect();
-
-            // Calculate pixel coordinates relative to the displayed image
-            const x = imgRect.left + (bounds[0] * imgRect.width);
-            const y = imgRect.top + (bounds[1] * imgRect.height);
-            const w = (bounds[2] - bounds[0]) * imgRect.width;
-            const h = (bounds[3] - bounds[1]) * imgRect.height;
-
-            const color = '#FFD700'; // Forces everything to be Gold
-
-            const highlight = document.createElement('div');
-            highlight.className = 'highlight';
-            highlight.style.left = (x - canvas.getBoundingClientRect().left) + 'px';
-            highlight.style.top = (y - canvas.getBoundingClientRect().top) + 'px';
-            highlight.style.width = w + 'px';
-            highlight.style.height = h + 'px';
-            highlight.style.borderColor = color;
-
-            const labelEl = document.createElement('div');
-            labelEl.className = 'highlight-label';
-            labelEl.innerText = `-> ${label}`;
-            labelEl.style.color = color;
-            highlight.appendChild(labelEl);
-
-            canvas.appendChild(highlight);
-        }
-
-        // --- 4. Interaction Handlers ---
-        img.addEventListener('click', async (e) => {
-            if (!currentState || currentState.status !== 'running') return;
-
-            const imgRect = img.getBoundingClientRect();
-            const xn = (e.clientX - imgRect.left) / imgRect.width;
-            const yn = (e.clientY - imgRect.top) / imgRect.height;
-
-            // Find which component contains the click (mirrors geometry.py / Tkinter logic)
-            let clicked = null;
-            for (const c of currentState.components) {
-                const [l, t, r, b] = c.bounds;
-                if (l <= xn && xn <= r && t <= yn && yn <= b) { clicked = c; break; }
-            }
-            if (!clicked) return;
-
-            await fetch('/click', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ component_id: clicked.id, xn: xn, yn: yn })
-            });
         });
 
-        // Spacebar for secondary task
-        document.addEventListener('keydown', async (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault(); // Prevent scrolling
-                await fetch('/secondary', { method: 'POST' });
+
+        // ============================================================
+        // 38. RESIZE
+        // ============================================================
+
+        function resize() {
+
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            if (!width || !height) return;
+
+            camera.aspect = width / height;
+
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(
+                width,
+                height,
+                false
+            );
+
+        }
+
+
+        window.addEventListener('resize', resize);
+
+        resize();
+
+
+        // ============================================================
+        // 39. ANIMATION LOOP
+        // ============================================================
+
+        const clock = new THREE.Clock();
+
+
+        function animate() {
+
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+
+            controls.update();
+
+            if (highlightBox) {
+                highlightBox.update();
             }
-        });
 
-        // Handle window resize to keep highlights accurate
-        window.addEventListener('resize', () => {
-            if (currentState) updateUI(currentState);
-        });
+            renderer.render(scene, camera);
 
-        // Start
+        }
+
+
+        // ============================================================
+        // 40. START APPLICATION
+        // ============================================================
+
+        animate();
+
         tick();
-        img.onload = () => { if (currentState) updateUI(currentState); };
+
     </script>
+
 </body>
 
 </html>
