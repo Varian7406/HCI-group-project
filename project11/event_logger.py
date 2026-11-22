@@ -40,8 +40,9 @@ class EventLogger:
         event.event_number = self._n
         try:
             self._writer.writerow(asdict(event))
-            if self._n % 5 == 0:
-                self._file.flush()
+            # Every event is flushed at once: a crash must never cost data,
+            # and sessions are a few hundred rows at most.
+            self._file.flush()
         except OSError as e:
             raise RuntimeError(f"Log write failed: {e}")
 

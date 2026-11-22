@@ -15,8 +15,9 @@ from fastapi.testclient import TestClient  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from webapp.server import app, ROOT  # noqa: E402
 
-RAM_STEPS = ["psu_switch", "chassis_ground", "dimm_clip_top", "dimm_clip_bottom",
-             "dimm_slot_2", "dimm_slot_2", "psu_switch"]
+RAM_STEPS = ["psu_switch", "side_screw", "side_panel", "chassis_ground",
+             "dimm_clip_top", "dimm_clip_bottom", "dimm_slot_2", "dimm_slot_2",
+             "side_panel", "psu_switch"]
 
 
 @pytest.fixture
@@ -47,16 +48,18 @@ def _play(client, condition_order):
     # Play the whole procedure. Pacing note: two consecutive steps may target
     # the same component (remove, then insert); the double-click guard
     # correctly swallows a same-component click within 350 ms, so the client
-    # waits that out exactly as a human would.
+    # waits that out exactly as a human would.  The hazard fires right before
+    # the grounding step, and a correct hazard response on the component that
+    # step asks for completes the step too, so the loop resyncs its pointer
+    # from the server after every hazard response.
     import time
     hazard_seen = False
-    last_comp = None
     seq = 10
-    for i, comp in enumerate(RAM_STEPS):
-        if comp == last_comp:
-            time.sleep(0.36)
-        last_comp = comp
+    i = 0
+    while i < len(RAM_STEPS):
         state = client.get(f"/api/session/{sid}/state").json()
+        if state["completed"]:
+            break
         if state["hazard"]:
             hazard_seen = True
             r = client.post(f"/api/session/{sid}/action",
@@ -64,10 +67,16 @@ def _play(client, condition_order):
                                   "action_seq": seq})
             assert r.json()["outcome"] == "accepted"
             seq += 1
+            i = client.get(f"/api/session/{sid}/state").json()["step_index"]
+            continue
+        comp = RAM_STEPS[i]
+        if i > 0 and comp == RAM_STEPS[i - 1]:
+            time.sleep(0.36)
         r = client.post(f"/api/session/{sid}/action",
                         json={"component_id": comp, "action_seq": seq})
         assert r.json()["outcome"] == "accepted", (comp, r.json())
         seq += 1
+        i += 1
     assert hazard_seen, "hazard never presented"
     assert client.get(f"/api/session/{sid}/state").json()["completed"]
     return sid
@@ -144,3 +153,57 @@ def test_stale_action_seq_rejected(client):
     r = client.post(f"/api/session/{sid}/action",
                     json={"component_id": "chassis_ground", "action_seq": 2})
     assert r.status_code == 409
+
+
+def test_starting_state_is_on_and_closed(client):
+    s = client.post("/api/session", json={
+        "participant_code": "TST", "condition_order": "ABC"}).json()["state"]
+    assert s["step_index"] == 0
+    assert s["step_id"] == "s01"
+    assert s["instruction"].startswith("Flip the PSU")
+    assert s["last_completed_step_id"] is None
+    assert s["wrong_count"] == 0 and not s["hint_ready"]
+
+
+def test_wrong_clicks_then_hint_is_logged_not_state_changing(client):
+    r = client.post("/api/session", json={
+        "participant_code": "TST", "condition_order": "BCA"})
+    sid = r.json()["session_id"]
+    # two wrong clicks on the same step -> hint offered
+    for seq in (1, 2):
+        out = client.post(f"/api/session/{sid}/action",
+                          json={"component_id": "hdd", "action_seq": seq})
+        assert out.json()["outcome"] == "rejected"
+    s = client.get(f"/api/session/{sid}/state").json()
+    assert s["wrong_count"] == 2 and s["hint_ready"]
+    assert s["step_index"] == 0, "wrong clicks never advance or undo"
+
+    d = client.post(f"/api/session/{sid}/hint").json()
+    assert d["hint"]["step_id"] == "s01"
+    assert d["hint"]["target_component"] == "psu_switch"  # B sees the target
+    s2 = client.get(f"/api/session/{sid}/state").json()
+    assert s2["step_index"] == 0, "hint never changes state"
+
+    # condition A: hint re-presents the instruction but names no target
+    r = client.post("/api/session", json={
+        "participant_code": "TST", "condition_order": "ABC"})
+    sid_a = r.json()["session_id"]
+    for seq in (1, 2):
+        client.post(f"/api/session/{sid_a}/action",
+                    json={"component_id": "hdd", "action_seq": seq})
+    d = client.post(f"/api/session/{sid_a}/hint").json()
+    assert d["hint"]["target_component"] == ""
+    assert d["hint"]["instruction"]
+
+    # hint use is part of the data
+    logs = sorted((ROOT / "data" / "raw-local" / sid_a).glob("attempt_*.csv"))
+    with logs[0].open() as f:
+        types = {row["event_type"] for row in csv.DictReader(f)}
+    assert "HINT_SHOWN" in types
+
+    # a correct click resets the wrong-click counter for the new step
+    client.post(f"/api/session/{sid_a}/action",
+                json={"component_id": "psu_switch", "action_seq": 3})
+    s3 = client.get(f"/api/session/{sid_a}/state").json()
+    assert s3["wrong_count"] == 0 and not s3["hint_ready"]
+    assert s3["last_completed_step_id"] == "s01"

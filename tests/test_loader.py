@@ -58,3 +58,16 @@ def test_bounds_out_of_range_raises(tmp_path):
     bad["components"][0]["bounds"] = [0.5, 0.1, 0.3, 0.3]
     with pytest.raises(ValueError):
         load_procedure(_write(tmp_path, bad))
+
+
+def test_pc_procedures_load():
+    """The three web procedures (RAM, GPU, case fan) all pass validation."""
+    root = Path(__file__).resolve().parents[1]
+    for pid in ("pc_ram", "pc_gpu", "pc_fan"):
+        proc = load_procedure(root / "assets" / "procedures" / f"{pid}.json")
+        assert proc.procedure_id == pid
+        assert 10 <= len(proc.steps) <= 12
+        # every procedure starts with the PC powered on and closed:
+        # step 1 is the PSU switch, then the panel comes off
+        assert proc.steps[0].component_id == "psu_switch"
+        assert {s.component_id for s in proc.steps[1:3]} == {"side_screw", "side_panel"}

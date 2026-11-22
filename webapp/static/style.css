@@ -193,12 +193,54 @@ main {
 /* fan idle spin */
 @keyframes spin { to { transform: rotate(360deg); } }
 #cooler-blades { animation: spin 6s linear infinite; transform-origin: 380px 260px; }
+#casefan-blades { animation: spin 4s linear infinite; transform-origin: 76px 428px; }
+/* PSU off: both fans coast to a stop */
+#pc.psu-off #cooler-blades, #pc.psu-off #casefan-blades { animation-play-state: paused; }
+
+/* ---------- closed side panel (starting state: PC on, case shut) ---------- */
+#case-panel { transition: transform 0.8s ease, opacity 0.8s ease; }
+#case-panel .panel-piece { fill: url(#g-panel); stroke: #0a0c0e; stroke-width: 2; }
+#case-panel.is-removed {
+  transform: translateX(-880px);
+  opacity: 0;
+  pointer-events: none;
+}
+/* held panel: visible and clickable while the "slide it back on" step is up */
+#case-panel.is-held { opacity: 0.88; }
+
+#side_screw .screw { transition: opacity 0.4s ease; }
+#side_screw.is-removed .screw { opacity: 0; }
+
+/* ---------- GPU / PCIe ---------- */
+#gpu_card { transition: transform 0.7s ease, opacity 0.7s ease; }
+#gpu_card.is-removed { transform: translate(0, -150px) rotate(-5deg); opacity: 0; }
+#pcie-cable { transition: opacity 0.4s ease; }
+#pcie_power.is-disconnected #pcie-cable { opacity: 0; }
+#pcie_tab .tab { transition: transform 0.3s ease; transform-origin: 578px 474px; }
+#pcie_tab.is-open .tab { transform: rotate(-60deg); }
+
+/* ---------- case fan ---------- */
+#case_fan { transition: transform 0.7s ease, opacity 0.7s ease; }
+#case_fan.is-removed { transform: translate(-130px, 0) rotate(8deg); opacity: 0; }
+#fan-cable { transition: opacity 0.4s ease; }
+#fan_header.is-disconnected #fan-cable { opacity: 0; }
+#fan_screws { transition: opacity 0.4s ease; }
+#fan_screws.is-removed { opacity: 0; }
+
+/* ---------- recovery hint ---------- */
+#btn-hint {
+  border-style: dashed;
+  border-color: var(--accent);
+  color: var(--accent);
+  margin-top: 8px;
+}
+#feedback.recover { background: rgba(255, 215, 94, 0.12); color: var(--focus); }
 
 @media (prefers-reduced-motion: reduce) {
-  #cooler-blades { animation: none; }
+  #cooler-blades, #casefan-blades { animation: none; }
   #overlay.pulse, #hazard-ring.pulse { animation: none; stroke-opacity: 1; }
   #psu_switch .rocker, #dimm_clip_top .clip, #dimm_clip_bottom .clip,
-  #ram-stick { transition: none; }
+  #ram-stick, #case-panel, #gpu_card, #case_fan, #pcie_tab .tab { transition: none; }
 }
 
 /* ---------- hazard banner ---------- */

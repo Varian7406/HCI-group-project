@@ -62,7 +62,7 @@ async function startSession() {
   const body = {
     participant_code: $("f-code").value.trim(),
     condition_order: $("f-order").value,
-    procedure_id: "pc_ram",
+    procedure_id: $("f-proc").value,
     is_practice: $("f-practice").checked,
   };
   const res = await fetch("/api/session", {
@@ -145,7 +145,9 @@ function render(s) {
 
   // new step: visual state + voice + chime
   if (s.step_index !== lastStepIndex) {
-    applyPcState(s.step_index);
+    applyPcState(s);
+    $("feedback").classList.add("hidden");
+    $("btn-hint").classList.add("hidden");
     if (lastStepIndex >= 0) beep("ok");
     speak(s.instruction);
     lastStepIndex = s.step_index;
@@ -154,14 +156,64 @@ function render(s) {
 }
 
 /* PC visual state derives from step progress; the server stays authoritative
-   for progression, this only mirrors it on screen. */
-function applyPcState(stepIndex) {
-  const psu = $("psu_switch");
-  psu.classList.toggle("is-off", stepIndex >= 1);
-  $("psu-rocker-label").textContent = stepIndex >= 1 ? "I" : "O";
-  $("dimm_clip_top").classList.toggle("is-open", stepIndex >= 3);
-  $("dimm_clip_bottom").classList.toggle("is-open", stepIndex >= 4);
-  $("dimm_slot_2").classList.toggle("is-removed", stepIndex >= 5 && stepIndex < 6);
+   for progression, this only mirrors it on screen.  All three procedures
+   share the same opening (PSU off -> thumbscrew -> panel -> ground) and
+   closing (panel back on -> PSU on), so the map is step-id based. */
+const PROC_MAP = {
+  pc_ram: { psuOff: "s01", panelOff: "s03", panelOn: "s09", psuOn: "s10" },
+  pc_gpu: { psuOff: "s01", panelOff: "s03", panelOn: "s10", psuOn: "s11" },
+  pc_fan: { psuOff: "s01", panelOff: "s03", panelOn: "s11", psuOn: "s12" },
+};
+
+function applyPcState(s) {
+  const ids = s.step_ids || [];
+  const idx = (id) => ids.indexOf(id);
+  const done = s.last_completed_step_id ? idx(s.last_completed_step_id) : -1;
+  const cur = idx(s.step_id);
+  const m = PROC_MAP[s.procedure] || PROC_MAP.pc_ram;
+
+  // PSU rocker (and fan spin) follow the power steps.
+  const psuOff = done >= idx(m.psuOff) && done < idx(m.psuOn);
+  $("psu_switch").classList.toggle("is-off", psuOff);
+  $("psu-rocker-label").textContent = psuOff ? "I" : "O";
+  $("pc").classList.toggle("psu-off", psuOff);
+
+  // Side panel: closed -> removed -> held (refit step) -> closed again.
+  const openPhase = done >= idx(m.panelOff) && cur < idx(m.panelOn);
+  const held = cur === idx(m.panelOn);
+  const panel = $("case-panel");
+  panel.classList.toggle("is-removed", openPhase);
+  panel.classList.toggle("is-held", held);
+  // With the case shut only the rear-access PSU switch and the panel itself
+  // are reachable (this closes the keyboard path; the mouse path is blocked
+  // by the panel piece itself).  Panel off or held: everything is reachable.
+  document.querySelectorAll("#pc .comp").forEach((el) => {
+    const active = openPhase || held
+      || el.id === "psu_switch" || panel.contains(el);
+    el.toggleAttribute("inert", !active);
+  });
+  $("side_screw").classList.toggle("is-removed",
+      done >= idx(m.panelOff) && cur < idx(m.panelOn));
+
+  if (s.procedure === "pc_ram") {
+    $("dimm_clip_top").classList.toggle("is-open", done >= idx("s05"));
+    $("dimm_clip_bottom").classList.toggle("is-open", done >= idx("s06"));
+    $("dimm_slot_2").classList.toggle("is-removed",
+        done >= idx("s07") && cur < idx("s08"));
+  } else if (s.procedure === "pc_gpu") {
+    $("pcie_power").classList.toggle("is-disconnected",
+        done >= idx("s05") && cur < idx("s09"));
+    $("pcie_tab").classList.toggle("is-open", done >= idx("s06"));
+    $("gpu_card").classList.toggle("is-removed",
+        done >= idx("s07") && cur < idx("s08"));
+  } else if (s.procedure === "pc_fan") {
+    $("fan_header").classList.toggle("is-disconnected",
+        done >= idx("s05") && cur < idx("s10"));
+    $("fan_screws").classList.toggle("is-removed",
+        done >= idx("s06") && cur < idx("s09"));
+    $("case_fan").classList.toggle("is-removed",
+        done >= idx("s07") && cur < idx("s08"));
+  }
 }
 
 function drawOverlay(targetId) {
@@ -192,9 +244,16 @@ function updateHazardTimer(s) {
     `${Math.max(0, (s.hazard.remaining_ms / hazardWindowMs) * 100)}%`;
 }
 
-/* ---------------- input ---------------- */
-document.querySelectorAll(".comp").forEach((el) => {
-  el.addEventListener("click", () => submitAction(el.dataset.component, el));
+/* ---------------- input ----------------
+ * Delegated on the SVG so nested components work (the thumbscrew sits inside
+ * the side panel; the fan screws are four circles in one group): the
+ * innermost .comp wins. */
+const pcSvg = $("pc");
+pcSvg.addEventListener("click", (e) => {
+  const el = e.target.closest(".comp");
+  if (el) submitAction(el.dataset.component, el);
+});
+document.querySelectorAll("#pc .comp").forEach((el) => {
   el.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
@@ -220,23 +279,56 @@ async function submitAction(componentId, el) {
       x_source: Math.round(x * 1000) / 1000,
       y_source: Math.round(y * 1000) / 1000,
     });
-    showFeedback(data.outcome);
+    showFeedback(data.outcome, data.state);
     render(data.state);
   } catch (e) {
     // Never blind-retry a state-changing POST: show it and resync from state.
-    showFeedback("error");
+    showFeedback("error", null);
     $("feedback").textContent = "Connection problem — state reloaded, action not repeated.";
     poll();
   }
 }
 
-function showFeedback(outcome) {
+/* Step-based recovery: a wrong click never undoes anything and never leaves
+   the participant stuck.  The message points back at the current step, and
+   after two wrong clicks on the same step a "Show me" hint appears (logged
+   server-side as HINT_SHOWN). */
+function showFeedback(outcome, s) {
   const fb = $("feedback");
-  fb.classList.remove("hidden", "error", "ok");
-  if (outcome === "accepted") { fb.classList.add("ok"); fb.textContent = "Correct."; beep("ok"); }
-  else if (outcome === "rejected") { fb.classList.add("error"); fb.textContent = "Wrong component. Check the instruction."; beep("error"); }
-  else { fb.textContent = ""; fb.classList.add("hidden"); }
+  fb.classList.remove("hidden", "error", "ok", "recover");
+  $("btn-hint").classList.add("hidden");
+  if (outcome === "accepted") {
+    fb.classList.add("ok"); fb.textContent = "Correct.";
+  } else if (outcome === "rejected") {
+    fb.classList.add("error");
+    fb.textContent = "Not this part. The step asks: " + (s ? s.instruction : "check the instruction.");
+    beep("error");
+    if (s && s.hint_ready) $("btn-hint").classList.remove("hidden");
+  } else {
+    fb.textContent = ""; fb.classList.add("hidden");
+  }
 }
+
+let hintFlashTimer = null;
+
+$("btn-hint").addEventListener("click", async () => {
+  if (!session) return;
+  try {
+    const d = await api("/hint");
+    const h = d.hint;
+    $("btn-hint").classList.add("hidden");
+    const fb = $("feedback");
+    fb.classList.remove("hidden", "error", "ok");
+    fb.classList.add("recover");
+    fb.textContent = "Remember: " + h.instruction;
+    if (session.condition === "C") speak(h.instruction);
+    if (h.target_component) {
+      drawOverlay(h.target_component);
+      clearTimeout(hintFlashTimer);
+      hintFlashTimer = setTimeout(() => poll(), 2500);  // resync overlay
+    }
+  } catch (e) { /* hint is optional help; never block the task */ }
+});
 
 /* ---------------- buttons & global keys ---------------- */
 $("btn-start").addEventListener("click", startSession);

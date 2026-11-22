@@ -135,8 +135,14 @@ class WebSession:
             "condition": c.ctx.condition.value,
             "condition_order": c.ctx.condition_order,
             "is_practice": c.ctx.is_practice,
+            "procedure": self.procedure.procedure_id,
             "step_index": c.step_index,
             "total_steps": len(self.procedure.steps),
+            "step_id": step.id,
+            "step_ids": [st.id for st in self.procedure.steps],
+            "last_completed_step_id": c.last_completed_step_id,
+            "wrong_count": c.wrong_on_step,
+            "hint_ready": c.hint_ready,
             "instruction": step.instruction,
             # Condition C only: the explanation is the manipulation.
             "explanation": (step.explanation or "") if c.ctx.condition == Condition.C_EXPLANATORY else "",
@@ -237,6 +243,29 @@ def review(sid: str):
         )
     # Reviewing shows the previous instruction but never changes PC state.
     return sess._reply({"reviewed_step_id": prev_id, "reviewed_instruction": instruction})
+
+
+@app.post("/api/session/{sid}/hint")
+def hint(sid: str):
+    """Step-based recovery: re-present the current step, log HINT_SHOWN.
+
+    Never changes machine state and never undoes anything; conditions B/C may
+    additionally flash the target overlay (frontend decision).
+    """
+    sess = _get(sid)
+    sess._tick()
+    payload = sess.ctrl.take_hint(now_ms())
+    sess._after_change()
+    if not payload:
+        raise HTTPException(409, "session already ended")
+    show_target = sess.ctrl.ctx.condition != Condition.A_MANUAL
+    return sess._reply({
+        "hint": {
+            "step_id": payload["step_id"],
+            "instruction": payload["instruction"],
+            "target_component": payload["target_component_id"] if show_target else "",
+        }
+    })
 
 
 @app.post("/api/session/{sid}/secondary")

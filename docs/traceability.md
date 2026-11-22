@@ -17,6 +17,7 @@ plus the human-factors reason.
 | R10 | `.gitignore`, participant codes only | - | privacy | privacy review pending |
 | R11 | `tools/generate_example_data.py` + analysis | - | reproducibility | lab run pending |
 | R12 | `ui/guidance_panel.py`, `ui/machine_canvas.py` | - | perception: text + shape + colour | lab checklist pending |
+| R13 | `controller.take_hint`, `HINT_AFTER_WRONG`, web `/hint` | `test_wrong_clicks_count_and_hint`, web smoke test | step-based recovery: a mistake guides back to the step instead of dead-ending; no undo exists | 2026-11-22: wrong clicks counted per step; after two, the frontend offers a logged hint. A correct hazard response on the current step's component also completes that step (one action, one advance). |
 
 Data-quality note: the double-click guard in `controller.py`
 (`DOUBLE_CLICK_GUARD_MS`) keeps the tail of a double-click out of the error

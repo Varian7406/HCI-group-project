@@ -43,6 +43,17 @@ The web app runs the SAME experiment engine as the tkinter app
 adapter. Logs land in `data/raw-local/<session_id>/` in the usual schema and
 pass `analysis/validate_logs.py`. Auto-pauses when the tab is hidden.
 
+Three procedures ship, all starting from a realistic state (PC powered ON,
+case CLOSED): `pc_ram` (RAM swap), `pc_gpu` (graphics card) and `pc_fan`
+(case fan). The researcher picks the procedure, condition order and
+participant code in the setup dialog.
+
+Error policy: no undo anywhere. A wrong click never changes machine state;
+the guidance points back at the current step, and after two wrong clicks on
+the same step a "Show me" hint re-presents it (logged as HINT_SHOWN).
+Conditions B/C flash the target overlay on the hint; A re-shows the text
+only, as with every other presentation difference.
+
 ## Docs
 See `docs/architecture.md` (how the code fits together),
 `docs/requirements.md` (requirements register) and `docs/traceability.md`

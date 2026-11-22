@@ -22,6 +22,13 @@
         <option>BCA</option><option>CAB</option><option>CBA</option>
       </select>
     </label>
+    <label>Procedure
+      <select id="f-proc">
+        <option value="pc_ram">RAM replacement</option>
+        <option value="pc_gpu">Graphics card replacement</option>
+        <option value="pc_fan">Case fan replacement</option>
+      </select>
+    </label>
     <label class="check"><input type="checkbox" id="f-practice"> Mark as practice / pilot</label>
     <button id="btn-start" class="primary">Start session</button>
     <p id="setup-error" class="error hidden"></p>
@@ -66,6 +73,9 @@
           </linearGradient>
           <linearGradient id="g-ram" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0" stop-color="#3f6b38"/><stop offset="1" stop-color="#2c4d27"/>
+          </linearGradient>
+          <linearGradient id="g-panel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#2b3038"/><stop offset="1" stop-color="#181b20"/>
           </linearGradient>
         </defs>
 
@@ -235,6 +245,30 @@
                 font-family="Arial">GRAPHICS CARD</text>
         </g>
 
+        <!-- ================= PCIe power connector (GPU) ================= -->
+        <g class="comp" id="pcie_power" data-component="pcie_power" tabindex="0"
+           role="button" aria-label="PCIe power connector">
+          <path id="pcie-cable" d="M 521 384 C 540 330 620 320 700 296"
+                fill="none" stroke="#15181c" stroke-width="6" stroke-linecap="round"/>
+          <rect x="498" y="384" width="46" height="16" rx="2" fill="#0b0d10"
+                stroke="#000" stroke-width="1.5"/>
+          <rect x="503" y="388" width="6" height="8" fill="#c8a83c"/>
+          <rect x="513" y="388" width="6" height="8" fill="#c8a83c"/>
+          <rect x="523" y="388" width="6" height="8" fill="#c8a83c"/>
+          <rect x="533" y="388" width="6" height="8" fill="#c8a83c"/>
+          <text x="521" y="378" text-anchor="middle" font-size="8" fill="#8a919c"
+                font-family="Arial">PCIE PWR</text>
+        </g>
+
+        <!-- ================= PCIe retention tab ================= -->
+        <g class="comp" id="pcie_tab" data-component="pcie_tab" tabindex="0"
+           role="button" aria-label="PCIe slot retention tab">
+          <rect class="tab" x="572" y="450" width="12" height="24" rx="2"
+                fill="#cfd4da" stroke="#5c6169" stroke-width="1.5"/>
+          <text x="578" y="490" text-anchor="middle" font-size="7" fill="#8a919c"
+                font-family="Arial">TAB</text>
+        </g>
+
         <!-- ================= Chassis ground (left wall) ================= -->
         <g class="comp" id="chassis_ground" data-component="chassis_ground" tabindex="0"
            role="button" aria-label="Chassis ground point, bare metal">
@@ -244,6 +278,46 @@
           <line x1="64" y1="314" x2="76" y2="326" stroke="#7d838c" stroke-width="2"/>
           <text x="70" y="372" text-anchor="middle" font-size="9" fill="#8a919c"
                 font-family="Arial">BARE METAL</text>
+        </g>
+
+        <!-- ================= Front case fan ================= -->
+        <g class="comp" id="case_fan" data-component="case_fan" tabindex="0"
+           role="button" aria-label="Front case fan">
+          <rect x="44" y="396" width="64" height="64" rx="4" fill="#14171b"
+                stroke="#000" stroke-width="2"/>
+          <circle cx="76" cy="428" r="26" fill="url(#g-fan)" stroke="#0a0c0e"
+                  stroke-width="3"/>
+          <g id="casefan-blades" class="fan-spin">
+            <path d="M 76 428 L 76 402 A 26 26 0 0 1 94 414 Z" fill="#262b33"/>
+            <path d="M 76 428 L 96 442 A 26 26 0 0 1 80 454 Z" fill="#22262d"/>
+            <path d="M 76 428 L 58 442 A 26 26 0 0 1 62 412 Z" fill="#262b33"/>
+          </g>
+          <circle cx="76" cy="428" r="6" fill="#0e1013" stroke="#262b33" stroke-width="2"/>
+          <text x="76" y="478" text-anchor="middle" font-size="9" fill="#8a919c"
+                font-family="Arial">FRONT FAN</text>
+        </g>
+
+        <!-- Fan corner screws: INTERACTIVE fan_screws -->
+        <g class="comp" id="fan_screws" data-component="fan_screws" tabindex="0"
+           role="button" aria-label="Fan corner screws">
+          <circle class="fscrew" cx="50" cy="402" r="3.5" fill="#cfd4da" stroke="#5c6169"/>
+          <circle class="fscrew" cx="102" cy="402" r="3.5" fill="#cfd4da" stroke="#5c6169"/>
+          <circle class="fscrew" cx="50" cy="454" r="3.5" fill="#cfd4da" stroke="#5c6169"/>
+          <circle class="fscrew" cx="102" cy="454" r="3.5" fill="#cfd4da" stroke="#5c6169"/>
+        </g>
+
+        <!-- Fan power header: INTERACTIVE fan_header -->
+        <g class="comp" id="fan_header" data-component="fan_header" tabindex="0"
+           role="button" aria-label="Fan power header">
+          <path id="fan-cable" d="M 140 427 C 190 430 230 432 268 430"
+                fill="none" stroke="#101216" stroke-width="5" stroke-linecap="round"/>
+          <rect x="114" y="420" width="26" height="14" rx="2" fill="#0b0d10"
+                stroke="#000" stroke-width="1.5"/>
+          <rect x="119" y="423" width="4" height="8" fill="#c8a83c"/>
+          <rect x="126" y="423" width="4" height="8" fill="#c8a83c"/>
+          <rect x="133" y="423" width="4" height="8" fill="#c8a83c"/>
+          <text x="127" y="450" text-anchor="middle" font-size="7" fill="#8a919c"
+                font-family="Arial">FAN HDR</text>
         </g>
 
         <!-- ================= Cables from PSU ================= -->
@@ -261,6 +335,33 @@
                 font-family="Arial">PWR SW</text>
           <text x="357" y="550" text-anchor="middle" font-size="7" fill="#5c6169"
                 font-family="Arial">RESET SW</text>
+        </g>
+
+        <!-- ================= Closed side panel (starting state) =================
+             Covers the interior; the gap at x188..244, y70..132 is the rear
+             cutout that leaves the PSU rocker reachable with the case shut. -->
+        <g id="case-panel" class="comp" data-component="side_panel" tabindex="0"
+           role="button" aria-label="Side panel">
+          <rect class="panel-piece" x="20" y="20" width="760" height="50" rx="8"/>
+          <rect class="panel-piece" x="20" y="70" width="168" height="510"/>
+          <rect class="panel-piece" x="244" y="70" width="536" height="510"/>
+          <rect class="panel-piece" x="188" y="132" width="592" height="448"/>
+          <line x1="20" y1="71" x2="780" y2="71" stroke="#3d434c" stroke-width="1.5" opacity="0.6"/>
+          <rect x="700" y="300" width="60" height="120" rx="6" fill="#14171b"
+                stroke="#0a0c0e" opacity="0.8"/>
+          <text x="500" y="296" text-anchor="middle" font-size="26" font-weight="bold"
+                fill="#454c57" font-family="Arial" letter-spacing="6">AURORA TX-1</text>
+          <text x="500" y="318" text-anchor="middle" font-size="11"
+                fill="#333a44" font-family="Arial" letter-spacing="3">PERFORMANCE SERIES</text>
+          <!-- thumbscrew: INTERACTIVE side_screw -->
+          <g class="comp" id="side_screw" data-component="side_screw" tabindex="0"
+             role="button" aria-label="Panel thumbscrew">
+            <circle class="screw" cx="748" cy="556" r="9" fill="#9aa0a8"
+                    stroke="#4a4f57" stroke-width="2"/>
+            <line class="screw" x1="742" y1="556" x2="754" y2="556" stroke="#3a3f47" stroke-width="2.5"/>
+            <text class="screw" x="748" y="580" text-anchor="middle" font-size="7"
+                  fill="#6a717c" font-family="Arial">THUMBSCREW</text>
+          </g>
         </g>
 
         <!-- Hazard highlight ring (shown by JS when the hazard is active) -->
@@ -293,6 +394,7 @@
         <strong>Previous step:</strong> <span id="reviewed-text"></span>
       </p>
       <div id="feedback" class="hidden" role="status"></div>
+      <button id="btn-hint" class="hidden">Show me</button>
 
       <div class="secondary" aria-label="Secondary task: voltage gauge">
         <div class="secondary-head">

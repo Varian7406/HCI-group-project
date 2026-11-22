@@ -15,6 +15,12 @@ from project11.secondary_task import SecondaryTask
 #: discarded, they are real mistakes and belong in the data.
 DOUBLE_CLICK_GUARD_MS = 350
 
+#: Wrong clicks on one step after which the frontend offers the "show me"
+#: recovery hint.  The engine only counts and logs; what the hint shows is a
+#: presentation decision (see webapp).  No undo exists anywhere: a wrong click
+#: never changes machine state, the participant is guided back to the step.
+HINT_AFTER_WRONG = 2
+
 
 @dataclass
 class SessionContext:
@@ -44,6 +50,12 @@ class SessionController:
         self.completed: bool = False
         self.aborted: bool = False
         self._last_accepted: Tuple[Optional[str], int] = (None, -(10**9))
+        self.wrong_on_step: int = 0
+        self.last_completed_step_id: Optional[str] = None
+
+    @property
+    def hint_ready(self) -> bool:
+        return self.wrong_on_step >= HINT_AFTER_WRONG
 
     def start(self, now_ms: int) -> None:
         self.started_at = now_ms
@@ -61,11 +73,12 @@ class SessionController:
             return Outcome.IGNORED
 
         last_cid, last_t = self._last_accepted
-        # The guard does not apply while a hazard is active: a rapid click on
-        # the same component is then a deliberate hazard response (the trigger
-        # step and the correct hazard component may even be the same part),
-        # not the tail of a double-click.
-        if (not self.hazard.state.active
+        # The guard does not apply while a hazard is UNANSWERED: a rapid click
+        # on the same component is then a deliberate hazard response (the
+        # trigger step and the correct hazard component may even be the same
+        # part), not the tail of a double-click.  Once answered, the guard is
+        # back in force for the rest of the session.
+        if (not (self.hazard.state.active and not self.hazard.state.responded)
                 and component_id == last_cid
                 and now_ms - last_t < DOUBLE_CLICK_GUARD_MS):
             self._emit("DOUBLE_CLICK_IGNORED", component_id=component_id,
@@ -81,6 +94,18 @@ class SessionController:
                        component_id=component_id,
                        outcome=outcome.value,
                        x_source=x_norm, y_source=y_norm)
+            if (outcome == Outcome.ACCEPTED
+                    and component_id == self.current_step().component_id):
+                # One physical action, one advance: a correct hazard response
+                # on the component the current step asks for completes that
+                # step too, so the participant is not made to click the same
+                # part twice in a row.
+                self._emit("ACTION_ACCEPTED",
+                           step_id=self.current_step().id,
+                           component_id=component_id,
+                           outcome=Outcome.ACCEPTED.value,
+                           x_source=x_norm, y_source=y_norm)
+                self._advance(now_ms)
             return outcome
 
         step = self.current_step()
@@ -94,11 +119,29 @@ class SessionController:
             self._advance(now_ms)
             return Outcome.ACCEPTED
         else:
+            self.wrong_on_step += 1
             self._emit("ACTION_REJECTED",
                        step_id=step.id, component_id=component_id,
                        outcome=Outcome.REJECTED.value,
                        x_source=x_norm, y_source=y_norm)
             return Outcome.REJECTED
+
+    def take_hint(self, now_ms: int) -> dict:
+        """Recovery hint for the current step: re-present it, never undo.
+
+        Logged as HINT_SHOWN so hint use is part of the data.  The state is
+        untouched; the caller decides how to present it per condition (A gets
+        the instruction text again, B/C may also flash the target overlay).
+        """
+        if self.completed or self.aborted:
+            return {}
+        step = self.current_step()
+        self._emit("HINT_SHOWN", step_id=step.id, component_id=step.component_id)
+        return {
+            "step_id": step.id,
+            "instruction": step.instruction,
+            "target_component_id": step.component_id,
+        }
 
     def _advance(self, now_ms: int) -> None:
         if self.step_index + 1 >= len(self.proc.steps):
@@ -108,6 +151,8 @@ class SessionController:
             return
         completed_step_id = self.proc.steps[self.step_index].id
         self.step_index += 1
+        self.wrong_on_step = 0
+        self.last_completed_step_id = completed_step_id
         self._emit("STEP_PRESENTED", step_id=self.current_step().id)
         # If the step just completed was the configured hazard trigger, the
         # hazard goes active NOW: presented_at starts the response window.
