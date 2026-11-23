@@ -65,24 +65,15 @@ reset_lock = threading.Lock()
 def background_tick(session_controller, session_stop_event):
     """
     Update the secondary task and trigger scripted hazards.
-
-    Each thread belongs to one session. When that session is
-    replaced, its stop event tells its thread to exit.
     """
-
     while not session_stop_event.is_set():
-
         time.sleep(0.05)
 
         with session_lock:
-
             if session_stop_event.is_set():
                 break
 
-            if (
-                session_controller.completed
-                or session_controller.aborted
-            ):
+            if session_controller.completed or session_controller.aborted:
                 break
 
             current_time = now_ms()
@@ -96,7 +87,11 @@ def background_tick(session_controller, session_stop_event):
 
             # Check whether the hazard response time expired.
             session_controller.hazard.miss_if_expired(current_time)
-
+            
+            # --- NEW: Check for Critical Overheat ---
+            if session_controller.secondary.state.value >= 1.0:
+                session_controller.aborted = True
+                break
 
 # ============================================================
 # CREATE A COMPLETELY FRESH SESSION
@@ -301,9 +296,15 @@ def get_state():
 
         secondary = controller.secondary.snapshot()
         hazard = controller.hazard.state
+        
+        # --- NEW: Determine failure reason ---
+        failure_reason = None
+        if status == "aborted" and secondary.get("value", 0) >= 0.99:
+            failure_reason = "overheat"
 
         return {
             "status": status,
+            "failure_reason": failure_reason,
 
             "step_index": controller.step_index,
             "total_steps": len(controller.proc.steps),
@@ -389,6 +390,8 @@ async def handle_click(request: Request):
 @app.post("/secondary")
 def handle_secondary():
 
+    vented = False
+
     with session_lock:
 
         if (
@@ -397,9 +400,11 @@ def handle_secondary():
             and not controller.aborted
         ):
 
-            controller.secondary.correct(now_ms())
+            vented = controller.secondary.correct(now_ms())
 
-    return {"ok": True}
+    # "vented" tells the frontend whether the press was accepted
+    # or blocked by the cooldown, so its countdown stays in sync.
+    return {"ok": True, "vented": vented}
 
 
 # ============================================================

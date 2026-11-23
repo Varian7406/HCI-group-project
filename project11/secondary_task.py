@@ -16,12 +16,16 @@ class SecondaryState:
 
 class SecondaryTask:
     def __init__(self, target_band=(0.45, 0.55), drift_per_second=0.08,
-                 correct_key="Space"):
+                 correct_key="Space", vent_cooldown_ms=5000):
         self.target_band = target_band
         self.drift_per_second = drift_per_second
         self.correct_key = correct_key
+        # Minimum time between two actual vents, so the key
+        # cannot be spammed.
+        self.vent_cooldown_ms = vent_cooldown_ms
         self.state = SecondaryState()
         self._last_tick_ms = 0
+        self._last_correct_ms = -10**9
         self._direction = 1.0
 
     def start(self, now_ms: int) -> None:
@@ -34,9 +38,10 @@ class SecondaryTask:
         if dt <= 0:
             return
         self.state.value += self._direction * self.drift_per_second * dt
-        if self.state.value >= 0.95:
-            self._direction = -1.0
-        elif self.state.value <= 0.05:
+        # No upper bounce: an unvented gauge must be able to climb
+        # all the way to 1.0 (maximum temperature) so the overheat
+        # abort and explosion can trigger.
+        if self.state.value <= 0.05:
             self._direction = 1.0
 
         lo, hi = self.target_band
@@ -51,10 +56,17 @@ class SecondaryTask:
                 self.state.opportunities += 1
 
     def correct(self, now_ms: int) -> bool:
+
+        # Enforce the vent cooldown: presses that arrive too soon
+        # after the last successful vent do nothing.
+        if now_ms - self._last_correct_ms < self.vent_cooldown_ms:
+            return False
+
         lo, hi = self.target_band
         if self.state.value < lo or self.state.value > hi:
             self.state.value = 0.5
             self.state.corrections += 1
+            self._last_correct_ms = now_ms
             self.state.events.append({"t": now_ms, "kind": "correction"})
             return True
         return False
