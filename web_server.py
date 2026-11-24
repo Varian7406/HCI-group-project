@@ -1,4 +1,5 @@
 
+
 import threading
 import time
 import uuid
@@ -40,7 +41,15 @@ app.mount(
 # SESSION SETTINGS
 # ============================================================
 
-CURRENT_CONDITION = Condition.B_OVERLAY
+# The active condition. The welcome page sets this through
+# POST /condition before the training session starts.
+current_condition = Condition.B_OVERLAY
+
+VALID_CONDITIONS = {
+    "A": Condition.A_MANUAL,
+    "B": Condition.B_OVERLAY,
+    "C": Condition.C_EXPLANATORY,
+}
 
 PROCEDURE_PATH = (
     BASE_DIR / "assets" / "procedures" / "example_procedure.json"
@@ -148,7 +157,7 @@ def reset_session():
         ctx = SessionContext(
             participant_code="WEB_USER",
             session_id=session_id,
-            condition=CURRENT_CONDITION,
+            condition=current_condition,
             condition_order=1,
             is_practice=True,
             task_id="WEB_TASK",
@@ -209,6 +218,45 @@ def reset_session():
         new_thread.start()
 
         return session_id
+
+
+# ============================================================
+# CONDITION SELECTION (WELCOME PAGE)
+# ============================================================
+
+@app.post("/condition")
+async def select_condition(request: Request):
+    """
+    Called by the welcome page when the participant picks a
+    condition. Sets the active condition and starts a fresh
+    session under it.
+    """
+
+    global current_condition
+
+    data = await request.json()
+
+    chosen = str(data.get("condition", "")).upper()
+
+    if chosen not in VALID_CONDITIONS:
+        return {"ok": False, "message": "Unknown condition."}
+
+    current_condition = VALID_CONDITIONS[chosen]
+
+    session_id = reset_session()
+
+    return {
+        "ok": True,
+        "condition": current_condition.value,
+        "session_id": session_id,
+        "message": f"Condition {current_condition.value} started.",
+    }
+
+
+@app.get("/condition")
+def get_condition():
+
+    return {"condition": current_condition.value}
 
 
 # ============================================================
@@ -332,7 +380,7 @@ def get_state():
                 ),
             },
 
-            "condition": CURRENT_CONDITION.value,
+            "condition": current_condition.value,
 
             "secondary": secondary,
 
@@ -412,7 +460,23 @@ def handle_secondary():
 # ============================================================
 
 @app.get("/", response_class=HTMLResponse)
-async def read_root():
+async def read_welcome():
+    """
+    Welcome page: the participant chooses condition A, B or C.
+    """
+
+    welcome_path = BASE_DIR / "static" / "welcome.html"
+
+    return HTMLResponse(
+        welcome_path.read_text(encoding="utf-8")
+    )
+
+
+@app.get("/training", response_class=HTMLResponse)
+async def read_training():
+    """
+    The 3D training session itself.
+    """
 
     index_path = BASE_DIR / "static" / "index.html"
 

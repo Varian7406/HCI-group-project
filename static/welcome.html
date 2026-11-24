@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project 11 - Choose a Condition</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            background: radial-gradient(circle, #303846, #11151c);
+            color: #eee;
+            font-family: Arial, sans-serif;
+        }
+
+        h1 {
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-size: 26px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin: 0 0 10px;
+        }
+
+        .subtitle {
+            color: #9aa4b5;
+            font-size: 15px;
+            line-height: 1.5;
+            max-width: 640px;
+            text-align: center;
+            margin: 0 0 36px;
+        }
+
+        .cards {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 1000px;
+        }
+
+        .card {
+            width: 280px;
+            padding: 24px 22px;
+            border: 1px solid #303846;
+            border-radius: 8px;
+            background: #1a202b;
+            cursor: pointer;
+            text-align: left;
+            transition: transform 0.15s, border-color 0.15s, background 0.15s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: #e6a23c;
+            background: #202734;
+        }
+
+        .card:disabled {
+            opacity: 0.5;
+            cursor: wait;
+            transform: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            margin-bottom: 14px;
+        }
+
+        .card-a .badge { background: #3b2f14; color: #facc15; border: 1px solid #facc15; }
+        .card-b .badge { background: #143049; color: #5da9ed; border: 1px solid #5da9ed; }
+        .card-c .badge { background: #163a26; color: #4ade80; border: 1px solid #4ade80; }
+
+        .card h2 {
+            font-family: 'Montserrat', Arial, sans-serif;
+            font-size: 17px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin: 0 0 10px;
+        }
+
+        .card p {
+            font-size: 14px;
+            line-height: 1.55;
+            color: #b8c0cd;
+            margin: 0;
+        }
+
+        .footnote {
+            margin-top: 30px;
+            font-size: 13px;
+            color: #6b7688;
+        }
+
+        #message {
+            margin-top: 18px;
+            font-size: 14px;
+            color: #facc15;
+            min-height: 20px;
+        }
+    </style>
+    <meta name="ai-disclosure" content="ai-autonomous" ai-model="GLM-5.3-Flash" ai-provider="Thaura">
+    <meta name="generator" content="Thaura (GLM-5.3-Flash)">
+</head>
+
+<body>
+
+    <h1>PC Training Experiment</h1>
+
+    <p class="subtitle">
+        Welcome. In this session you will assemble and maintain a PC in a
+        simulated 3D workspace. Please select the guidance condition you
+        have been assigned. A new training session will start immediately.
+    </p>
+
+    <div class="cards">
+
+        <button class="card card-a" data-condition="A">
+            <span class="badge">CONDITION A</span>
+            <h2>Manual</h2>
+            <p>
+                No guidance at all. You read the instruction and find the
+                right component in the PC yourself.
+            </p>
+        </button>
+
+        <button class="card card-b" data-condition="B">
+            <span class="badge">CONDITION B</span>
+            <h2>Overlay</h2>
+            <p>
+                Visual guidance only. The component required for the current
+                step is highlighted directly on the 3D model.
+            </p>
+        </button>
+
+        <button class="card card-c" data-condition="C">
+            <span class="badge">CONDITION C</span>
+            <h2>Explanatory</h2>
+            <p>
+                Visual guidance plus explanations. The required component is
+                highlighted and each step is explained, so you learn why it
+                matters.
+            </p>
+        </button>
+
+    </div>
+
+    <div id="message"></div>
+
+    <p class="footnote">
+        Drag to rotate the PC &middot; Scroll to zoom &middot; Click components to interact
+    </p>
+
+    <script>
+        const messageElement = document.getElementById('message');
+        const cards = document.querySelectorAll('.card');
+
+        async function chooseCondition(condition) {
+
+            cards.forEach(card => card.disabled = true);
+
+            messageElement.textContent = 'Starting condition ' + condition + '...';
+
+            try {
+
+                const response = await fetch('/condition', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ condition: condition })
+                });
+
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+
+                const data = await response.json();
+
+                if (!data.ok) {
+                    throw new Error(data.message || 'Unknown error');
+                }
+
+                window.location.href = '/training';
+
+            } catch (error) {
+
+                messageElement.textContent =
+                    'Could not start the session: ' + error.message +
+                    '. Is the Python server running?';
+
+                cards.forEach(card => card.disabled = false);
+            }
+        }
+
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                chooseCondition(card.dataset.condition);
+            });
+        });
+    </script>
+
+</body>
+
+</html>
