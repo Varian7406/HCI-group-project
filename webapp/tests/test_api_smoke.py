@@ -15,8 +15,10 @@ from fastapi.testclient import TestClient  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from webapp.server import app, ROOT  # noqa: E402
 
-RAM_STEPS = ["psu_switch", "side_screw", "side_panel", "chassis_ground",
-             "dimm_clip_top", "dimm_clip_bottom", "dimm_slot_2", "dimm_slot_2",
+RAM_STEPS = ["psu_switch", "chassis_ground",
+             "side_screw_1", "side_screw_2", "side_screw_3", "side_screw_4",
+             "side_panel",
+             "dimm_clip_top", "dimm_clip_bottom", "dimm_a2", "dimm_a2",
              "side_panel", "psu_switch"]
 
 
@@ -172,7 +174,7 @@ def test_wrong_clicks_then_hint_is_logged_not_state_changing(client):
     # two wrong clicks on the same step -> hint offered
     for seq in (1, 2):
         out = client.post(f"/api/session/{sid}/action",
-                          json={"component_id": "hdd", "action_seq": seq})
+                          json={"component_id": "m2_shield", "action_seq": seq})
         assert out.json()["outcome"] == "rejected"
     s = client.get(f"/api/session/{sid}/state").json()
     assert s["wrong_count"] == 2 and s["hint_ready"]
@@ -190,7 +192,7 @@ def test_wrong_clicks_then_hint_is_logged_not_state_changing(client):
     sid_a = r.json()["session_id"]
     for seq in (1, 2):
         client.post(f"/api/session/{sid_a}/action",
-                    json={"component_id": "hdd", "action_seq": seq})
+                    json={"component_id": "m2_shield", "action_seq": seq})
     d = client.post(f"/api/session/{sid_a}/hint").json()
     assert d["hint"]["target_component"] == ""
     assert d["hint"]["instruction"]

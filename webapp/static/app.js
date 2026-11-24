@@ -80,7 +80,7 @@ async function startSession() {
   session = { id: data.session_id, condition: data.state.condition };
   $("setup").classList.add("hidden");
   $("task").classList.remove("hidden");
-  $("hud-condition").textContent = `condition ${data.state.condition}`;
+  $("hdr-cond").textContent = `condition ${data.state.condition}`;
   lastSeq = -1; lastStepIndex = -1; hazardSeen = false; actionSeq = 0;
   render(data.state);
   pollTimer = setInterval(poll, pollMs);
@@ -97,7 +97,7 @@ async function poll() {
 /* ---------------- rendering ---------------- */
 function render(s) {
   // paused overlay
-  $("paused-overlay").classList.toggle("hidden", !s.paused);
+  $("overlay-paused").classList.toggle("hidden", !s.paused);
   $("btn-pause").disabled = s.paused || s.completed || s.aborted;
 
   if (s.seq === lastSeq && s.step_index === lastStepIndex && !s.hazard) {
@@ -108,12 +108,12 @@ function render(s) {
   lastSeq = s.seq;
 
   $("step-counter").textContent = `Step ${s.step_index + 1} / ${s.total_steps}`;
-  $("hud-step").textContent = `Step ${s.step_index + 1} / ${s.total_steps}`;
+  $("hdr-step").textContent = `Step ${s.step_index + 1} / ${s.total_steps}`;
   $("instruction").textContent = s.instruction;
 
-  // Condition C: explanation box. A and B never see it.
+  // Condition C: explanation. A and B never see it.
   const showExp = s.condition === "C" && s.explanation;
-  $("explanation-box").classList.toggle("hidden", !showExp);
+  $("explanation").classList.toggle("hidden", !showExp);
   if (showExp) $("explanation").textContent = s.explanation;
 
   // Conditions B/C: highlight the target. A never does.
@@ -135,11 +135,10 @@ function render(s) {
   if (s.completed || s.aborted) {
     clearInterval(pollTimer);
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-    $("done-title").textContent = s.completed ? "Task complete" : "Session ended";
     $("done-text").textContent = s.completed
       ? "All steps finished. Thank you."
       : "The session was ended early. Data up to this point is saved.";
-    $("done-overlay").classList.remove("hidden");
+    $("overlay-done").classList.remove("hidden");
     return;
   }
 
@@ -157,12 +156,12 @@ function render(s) {
 
 /* PC visual state derives from step progress; the server stays authoritative
    for progression, this only mirrors it on screen.  All three procedures
-   share the same opening (PSU off -> thumbscrew -> panel -> ground) and
+   share the same opening (PSU off -> ground -> four thumbscrews -> panel) and
    closing (panel back on -> PSU on), so the map is step-id based. */
 const PROC_MAP = {
-  pc_ram: { psuOff: "s01", panelOff: "s03", panelOn: "s09", psuOn: "s10" },
-  pc_gpu: { psuOff: "s01", panelOff: "s03", panelOn: "s10", psuOn: "s11" },
-  pc_fan: { psuOff: "s01", panelOff: "s03", panelOn: "s11", psuOn: "s12" },
+  pc_ram: { psuOff: "s01", panelOff: "s07", panelOn: "s12", psuOn: "s13" },
+  pc_gpu: { psuOff: "s01", panelOff: "s07", panelOn: "s13", psuOn: "s14" },
+  pc_fan: { psuOff: "s01", panelOff: "s07", panelOn: "s20", psuOn: "s21" },
 };
 
 function applyPcState(s) {
@@ -171,11 +170,14 @@ function applyPcState(s) {
   const done = s.last_completed_step_id ? idx(s.last_completed_step_id) : -1;
   const cur = idx(s.step_id);
   const m = PROC_MAP[s.procedure] || PROC_MAP.pc_ram;
+  const d = (id) => done >= idx(id);                        // step completed
+  // a component is "out" from completing its remove step until completing
+  // its install step (during the install step itself it is still out)
+  const gone = (a, b) => done >= idx(a) && done < idx(b);
 
-  // PSU rocker (and fan spin) follow the power steps.
-  const psuOff = done >= idx(m.psuOff) && done < idx(m.psuOn);
+  // PSU rocker (and every fan) follow the power steps.
+  const psuOff = gone(m.psuOff, m.psuOn);
   $("psu_switch").classList.toggle("is-off", psuOff);
-  $("psu-rocker-label").textContent = psuOff ? "I" : "O";
   $("pc").classList.toggle("psu-off", psuOff);
 
   // Side panel: closed -> removed -> held (refit step) -> closed again.
@@ -184,35 +186,40 @@ function applyPcState(s) {
   const panel = $("case-panel");
   panel.classList.toggle("is-removed", openPhase);
   panel.classList.toggle("is-held", held);
-  // With the case shut only the rear-access PSU switch and the panel itself
-  // are reachable (this closes the keyboard path; the mouse path is blocked
-  // by the panel piece itself).  Panel off or held: everything is reachable.
+  // With the case shut only the rear cutout (PSU switch, ESD ground) and the
+  // panel itself are reachable (this closes the keyboard path; the mouse path
+  // is blocked by the panel piece itself).  Panel off or held: everything.
   document.querySelectorAll("#pc .comp").forEach((el) => {
     const active = openPhase || held
-      || el.id === "psu_switch" || panel.contains(el);
+      || el.id === "psu_switch" || el.id === "chassis_ground"
+      || panel.contains(el);
     el.toggleAttribute("inert", !active);
   });
-  $("side_screw").classList.toggle("is-removed",
-      done >= idx(m.panelOff) && cur < idx(m.panelOn));
+
+  // The four panel thumbscrews: each fades away as its own step completes,
+  // and all ride back with the panel when it is refitted.
+  for (let k = 1; k <= 4; k++) {
+    $(`side_screw_${k}`).classList.toggle("is-removed",
+        d(`s0${k + 2}`) && !d(m.panelOn));
+  }
 
   if (s.procedure === "pc_ram") {
-    $("dimm_clip_top").classList.toggle("is-open", done >= idx("s05"));
-    $("dimm_clip_bottom").classList.toggle("is-open", done >= idx("s06"));
-    $("dimm_slot_2").classList.toggle("is-removed",
-        done >= idx("s07") && cur < idx("s08"));
+    $("dimm_clip_top").classList.toggle("is-open", d("s08"));
+    $("dimm_clip_bottom").classList.toggle("is-open", d("s09"));
+    $("dimm_a2").classList.toggle("is-removed", gone("s10", "s11"));
   } else if (s.procedure === "pc_gpu") {
-    $("pcie_power").classList.toggle("is-disconnected",
-        done >= idx("s05") && cur < idx("s09"));
-    $("pcie_tab").classList.toggle("is-open", done >= idx("s06"));
-    $("gpu_card").classList.toggle("is-removed",
-        done >= idx("s07") && cur < idx("s08"));
+    $("gpu_power").classList.toggle("is-disconnected", gone("s08", "s12"));
+    $("pcie_latch").classList.toggle("is-open", d("s09"));
+    $("gpu_card").classList.toggle("is-removed", gone("s10", "s11"));
   } else if (s.procedure === "pc_fan") {
-    $("fan_header").classList.toggle("is-disconnected",
-        done >= idx("s05") && cur < idx("s10"));
-    $("fan_screws").classList.toggle("is-removed",
-        done >= idx("s06") && cur < idx("s09"));
-    $("case_fan").classList.toggle("is-removed",
-        done >= idx("s07") && cur < idx("s08"));
+    $("fan_header").classList.toggle("is-disconnected", gone("s08", "s19"));
+    // corner screws: s09-s12 out, s15-s18 back in
+    for (let k = 1; k <= 4; k++) {
+      $(`fan_screw_${k}`).classList.toggle("is-removed",
+          gone(`s${String(k + 8).padStart(2, "0")}`,
+               `s${String(k + 14).padStart(2, "0")}`));
+    }
+    $("case_fan").classList.toggle("is-removed", gone("s13", "s14"));
   }
 }
 
@@ -234,7 +241,7 @@ function updateGauge(s) {
   const needle = $("gauge-needle");
   needle.style.left = `calc(${(s.secondary.value * 100).toFixed(1)}% - 2px)`;
   needle.classList.toggle("out", !s.secondary.in_band);
-  $("secondary-stats").textContent =
+  $("gauge-hits").textContent =
     `fixes ${s.secondary.corrections}/${s.secondary.opportunities}`;
 }
 
@@ -245,9 +252,8 @@ function updateHazardTimer(s) {
 }
 
 /* ---------------- input ----------------
- * Delegated on the SVG so nested components work (the thumbscrew sits inside
- * the side panel; the fan screws are four circles in one group): the
- * innermost .comp wins. */
+ * Delegated on the SVG so nested components work (the thumbscrews sit inside
+ * the side panel): the innermost .comp wins. */
 const pcSvg = $("pc");
 pcSvg.addEventListener("click", (e) => {
   const el = e.target.closest(".comp");
@@ -270,7 +276,7 @@ async function submitAction(componentId, el) {
   if (el) {
     const b = el.getBBox();
     x = (b.x + b.width / 2) / 800;
-    y = (b.y + b.height / 2) / 600;
+    y = (b.y + b.height / 2) / 680;
   }
   try {
     const data = await api("/action", {
@@ -334,7 +340,8 @@ $("btn-hint").addEventListener("click", async () => {
 $("btn-start").addEventListener("click", startSession);
 $("btn-pause").addEventListener("click", () => api("/pause").then((d) => render(d.state)));
 $("btn-resume").addEventListener("click", () => api("/resume").then((d) => render(d.state)));
-$("btn-abort").addEventListener("click", async () => {
+$("btn-finish").addEventListener("click", () => location.reload());
+$("btn-exit").addEventListener("click", async () => {
   if (!session || confirm("End this session? Data up to now is saved.")) {
     if (session) await api("/abort").catch(() => {});
     location.reload();

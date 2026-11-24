@@ -334,8 +334,7 @@ def build_image() -> Image.Image:
     d.text((40, H - 18), "Fictional training panel for a research simulation. All steps are illustrative.",
            font=f_small, fill="#d1d5db", anchor="lm")
 
-    for panel_item in PANEL:
-        cid, label, col, row = panel_item[0], panel_item[1], panel_item[3], panel_item[4]
+    for cid, label, kind, col, row, _extra in PANEL:
         x0, y0, x1, y1 = cell_box(col, row)
         stop = cid == "emergency_stop"
         d.rounded_rectangle((x0, y0, x1, y1), 16, fill="#fde8e8" if stop else "#e6eaf0",
@@ -414,9 +413,8 @@ def procedure_json(pid: str) -> dict:
 
 def travel(pid: str) -> float:
     """Total straight-line distance (source pixels) between consecutive step targets."""
-    centres = {item[0]: (MARGIN_X + item[3] * (CELL_W + GAP) + CELL_W / 2,
-                         TOP + item[4] * (CELL_H + GAP) + CELL_H / 2)
-               for item in PANEL}
+    centres = {cid: (MARGIN_X + c * (CELL_W + GAP) + CELL_W / 2, TOP + r * (CELL_H + GAP) + CELL_H / 2)
+               for cid, _l, _k, c, r, _e in PANEL}
     pts = [centres[st["component_id"]] for st in VARIANTS[pid]["steps"]]
     return sum(math.dist(a, b) for a, b in zip(pts, pts[1:]))
 

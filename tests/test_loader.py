@@ -66,8 +66,11 @@ def test_pc_procedures_load():
     for pid in ("pc_ram", "pc_gpu", "pc_fan"):
         proc = load_procedure(root / "assets" / "procedures" / f"{pid}.json")
         assert proc.procedure_id == pid
-        assert 10 <= len(proc.steps) <= 12
+        assert 13 <= len(proc.steps) <= 21
         # every procedure starts with the PC powered on and closed:
-        # step 1 is the PSU switch, then the panel comes off
+        # PSU off, ground, four separate thumbscrew steps, then the panel
         assert proc.steps[0].component_id == "psu_switch"
-        assert {s.component_id for s in proc.steps[1:3]} == {"side_screw", "side_panel"}
+        assert proc.steps[1].component_id == "chassis_ground"
+        assert [s.component_id for s in proc.steps[2:6]] == [
+            "side_screw_1", "side_screw_2", "side_screw_3", "side_screw_4"]
+        assert proc.steps[6].component_id == "side_panel"

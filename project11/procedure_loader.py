@@ -59,10 +59,10 @@ def load_procedure(path: Path) -> Procedure:
         raise ValueError("procedure: duplicate component ids")
 
     raw_steps = data.get("steps", [])
-    # 6-14: the PC procedures open and close the case, which adds four steps
-    # to the core 6-8 of the original panel procedures.
-    if not (6 <= len(raw_steps) <= 14):
-        raise ValueError(f"procedure: expected 6-14 steps, got {len(raw_steps)}")
+    # 6-24: the PC procedures open and close the case, and every panel or fan
+    # screw is its own step, as it is in real life.
+    if not (6 <= len(raw_steps) <= 24):
+        raise ValueError(f"procedure: expected 6-24 steps, got {len(raw_steps)}")
     steps: List[Step] = [_parse_step(s) for s in raw_steps]
     for s in steps:
         if s.component_id not in comp_ids:

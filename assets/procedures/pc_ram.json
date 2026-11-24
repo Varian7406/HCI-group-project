@@ -1,130 +1,28 @@
 {
   "schema_version": 1,
   "procedure_id": "pc_ram",
-  "content_version": "draft-02",
+  "content_version": "draft-03",
   "image": "images/panel.png",
   "source": "FICTIONAL desktop-PC maintenance simulation. Illustrative only - not real maintenance advice. Hardware facts to be validated against an equipment source before the main study.",
   "components": [
-    {
-      "id": "psu_switch",
-      "label": "PSU power switch",
-      "bounds": [
-        0.245,
-        0.127,
-        0.298,
-        0.207
-      ]
-    },
-    {
-      "id": "side_screw",
-      "label": "Panel thumbscrew",
-      "bounds": [
-        0.921,
-        0.14,
-        0.949,
-        0.179
-      ]
-    },
-    {
-      "id": "side_panel",
-      "label": "Side panel",
-      "bounds": [
-        0.025,
-        0.033,
-        0.975,
-        0.967
-      ]
-    },
-    {
-      "id": "chassis_ground",
-      "label": "Chassis ground point",
-      "bounds": [
-        0.055,
-        0.493,
-        0.12,
-        0.593
-      ]
-    },
-    {
-      "id": "dimm_clip_top",
-      "label": "Top retention clip",
-      "bounds": [
-        0.686,
-        0.307,
-        0.71,
-        0.33
-      ]
-    },
-    {
-      "id": "dimm_clip_bottom",
-      "label": "Bottom retention clip",
-      "bounds": [
-        0.686,
-        0.545,
-        0.71,
-        0.568
-      ]
-    },
-    {
-      "id": "dimm_slot_2",
-      "label": "RAM module (slot 2)",
-      "bounds": [
-        0.681,
-        0.325,
-        0.715,
-        0.55
-      ]
-    },
-    {
-      "id": "cpu_cooler",
-      "label": "CPU cooler",
-      "bounds": [
-        0.4025,
-        0.337,
-        0.5475,
-        0.53
-      ]
-    },
-    {
-      "id": "gpu_card",
-      "label": "Graphics card",
-      "bounds": [
-        0.365,
-        0.643,
-        0.73,
-        0.79
-      ]
-    },
-    {
-      "id": "case_fan",
-      "label": "Front case fan",
-      "bounds": [
-        0.055,
-        0.66,
-        0.135,
-        0.767
-      ]
-    },
-    {
-      "id": "hdd",
-      "label": "Hard drive",
-      "bounds": [
-        0.715,
-        0.22,
-        0.928,
-        0.26
-      ]
-    },
-    {
-      "id": "cmos_battery",
-      "label": "CMOS battery",
-      "bounds": [
-        0.791,
-        0.33,
-        0.834,
-        0.387
-      ]
-    }
+    {"id": "psu_switch", "label": "PSU power switch", "bounds": [0.0275, 0.688, 0.1025, 0.926]},
+    {"id": "chassis_ground", "label": "Chassis ground point", "bounds": [0.0325, 0.694, 0.1025, 0.744]},
+    {"id": "side_screw_1", "label": "Panel thumbscrew, top-left", "bounds": [0.041, 0.048, 0.069, 0.081]},
+    {"id": "side_screw_2", "label": "Panel thumbscrew, top-right", "bounds": [0.931, 0.048, 0.959, 0.081]},
+    {"id": "side_screw_3", "label": "Panel thumbscrew, bottom-right", "bounds": [0.931, 0.919, 0.959, 0.951]},
+    {"id": "side_screw_4", "label": "Panel thumbscrew, bottom-left", "bounds": [0.041, 0.919, 0.069, 0.951]},
+    {"id": "side_panel", "label": "Side panel", "bounds": [0.0125, 0.015, 0.9875, 0.985]},
+    {"id": "dimm_clip_top", "label": "Top retention clip", "bounds": [0.57, 0.116, 0.6025, 0.151]},
+    {"id": "dimm_clip_bottom", "label": "Bottom retention clip", "bounds": [0.57, 0.407, 0.6025, 0.443]},
+    {"id": "dimm_a2", "label": "RAM module (slot A2)", "bounds": [0.574, 0.154, 0.599, 0.404]},
+    {"id": "cpu_cooler", "label": "CPU cooler", "bounds": [0.29, 0.179, 0.46, 0.379]},
+    {"id": "gpu_card", "label": "Graphics card", "bounds": [0.17, 0.609, 0.7275, 0.738]},
+    {"id": "gpu_power", "label": "GPU 8-pin power", "bounds": [0.675, 0.638, 0.745, 0.7]},
+    {"id": "pcie_latch", "label": "PCIe retention latch", "bounds": [0.681, 0.551, 0.716, 0.601]},
+    {"id": "fan_header", "label": "System fan header", "bounds": [0.75, 0.094, 0.7975, 0.124]},
+    {"id": "case_fan", "label": "Front case fan", "bounds": [0.8625, 0.082, 0.9525, 0.188]},
+    {"id": "m2_shield", "label": "M.2 thermal armor", "bounds": [0.285, 0.44, 0.515, 0.504]},
+    {"id": "cmos_battery", "label": "CMOS battery", "bounds": [0.77, 0.5235, 0.83, 0.594]}
   ],
   "steps": [
     {
@@ -136,62 +34,83 @@
     },
     {
       "id": "s02",
-      "instruction": "Remove the thumbscrew at the top-right corner of the side panel.",
-      "expected_action": "remove",
-      "component_id": "side_screw",
-      "explanation": "The thumbscrew is the only fastener holding the panel. Loosening it by hand avoids tools scratching the paint."
+      "instruction": "Touch the bare metal ground point to discharge static.",
+      "expected_action": "ground",
+      "component_id": "chassis_ground",
+      "explanation": "Static electricity from your body can destroy memory chips without any visible spark. Grounding once, before the case is opened, covers the whole job."
     },
     {
       "id": "s03",
+      "instruction": "Unscrew the top-left panel thumbscrew.",
+      "expected_action": "remove",
+      "component_id": "side_screw_1",
+      "explanation": "The panel is held by four thumbscrews, one at each corner. They are hand-tight, so no tools are needed."
+    },
+    {
+      "id": "s04",
+      "instruction": "Unscrew the top-right panel thumbscrew.",
+      "expected_action": "remove",
+      "component_id": "side_screw_2",
+      "explanation": "Each thumbscrew is loosened individually. Removing them one at a time keeps the panel seated until all four are free."
+    },
+    {
+      "id": "s05",
+      "instruction": "Unscrew the bottom-right panel thumbscrew.",
+      "expected_action": "remove",
+      "component_id": "side_screw_3",
+      "explanation": "Thumbscrews stay captive in the panel, so they cannot roll into the case or get lost."
+    },
+    {
+      "id": "s06",
+      "instruction": "Unscrew the bottom-left panel thumbscrew.",
+      "expected_action": "remove",
+      "component_id": "side_screw_4",
+      "explanation": "With the last screw free the panel is only held by the slots along the case edge."
+    },
+    {
+      "id": "s07",
       "instruction": "Slide the side panel off to open the case.",
       "expected_action": "remove",
       "component_id": "side_panel",
       "explanation": "The panel rides on slots along the case edge. Sliding it back first, then lifting, avoids bending the sheet metal."
     },
     {
-      "id": "s04",
-      "instruction": "Touch the bare metal of the case to discharge static.",
-      "expected_action": "ground",
-      "component_id": "chassis_ground",
-      "explanation": "Static electricity from your body can destroy memory chips without any visible spark. Touching bare case metal equalises the charge."
-    },
-    {
-      "id": "s05",
-      "instruction": "Open the top retention clip of the RAM slot.",
+      "id": "s08",
+      "instruction": "Open the top retention clip of RAM slot A2.",
       "expected_action": "release",
       "component_id": "dimm_clip_top",
       "explanation": "The clip is a plastic lever that locks the module in place. Opening it releases the top of the module."
     },
     {
-      "id": "s06",
-      "instruction": "Open the bottom retention clip of the RAM slot.",
+      "id": "s09",
+      "instruction": "Open the bottom retention clip of RAM slot A2.",
       "expected_action": "release",
       "component_id": "dimm_clip_bottom",
       "explanation": "Both clips must be open before the module can come out. Forcing it with a clip closed breaks the clip or the slot."
     },
     {
-      "id": "s07",
-      "instruction": "Pull the RAM module straight up and out of the slot.",
+      "id": "s10",
+      "instruction": "Pull the RAM module in slot A2 straight up and out.",
       "expected_action": "remove",
-      "component_id": "dimm_slot_2",
-      "explanation": "Pulling straight up keeps the gold contacts aligned. Wiggling or pulling at an angle bends the contacts in the slot."
+      "component_id": "dimm_a2",
+      "explanation": "Pulling straight up keeps the gold contacts aligned. Wiggling or pulling at an angle bends the contacts in the slot. The module in B2 stays where it is."
     },
     {
-      "id": "s08",
-      "instruction": "Press the replacement module into the slot until both clips snap closed.",
+      "id": "s11",
+      "instruction": "Press the replacement module into slot A2 until both clips snap closed.",
       "expected_action": "install",
-      "component_id": "dimm_slot_2",
+      "component_id": "dimm_a2",
       "explanation": "The module only fits one way because of the keyed notch. Even pressure until the clips click means the contacts are fully seated."
     },
     {
-      "id": "s09",
+      "id": "s12",
       "instruction": "Slide the side panel back on until it clicks home.",
       "expected_action": "install",
       "component_id": "side_panel",
       "explanation": "Closing the case before power is restored keeps dust out and the airflow path intact."
     },
     {
-      "id": "s10",
+      "id": "s13",
       "instruction": "Flip the PSU power switch back to I (on).",
       "expected_action": "toggle",
       "component_id": "psu_switch",
@@ -199,7 +118,7 @@
     }
   ],
   "hazard": {
-    "trigger_after_step": "s03",
+    "trigger_after_step": "s07",
     "message": "STATIC WARNING: charge detected on your wrist. Discharge on the case metal before touching the module!",
     "correct_component_id": "chassis_ground",
     "response_window_ms": 6000
