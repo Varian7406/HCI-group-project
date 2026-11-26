@@ -16,9 +16,9 @@ from fastapi.staticfiles import StaticFiles
 
 from project11.controller import SessionContext, SessionController
 from project11.event_logger import EventLogger
-from project11.models import Condition
+from project11.models import Condition, Outcome, Step
 from project11.procedure_loader import load_procedure
-from project11.scheduler import now_ms
+from project11.scheduler import Scheduler, now_ms
 
 
 # ============================================================
@@ -63,6 +63,60 @@ current_participant = "WEB_USER"
 VARIANTS = ["ram", "gpu", "fans"]
 
 current_variant = "ram"
+
+
+def build_variant_steps(variant: str):
+    """
+    Return the actual tutorial procedure for the selected hardware version.
+
+    A/B/C are the guidance conditions. The hardware version (RAM/GPU/fans)
+    decides which component-replacement task is taught.
+    """
+    if variant == "gpu":
+        definitions = [
+            ("s01", "Shut down the PC through its operating system. Wait until all fans and lights have stopped, then click the case power button to confirm shutdown.", "select", "power_button", "A full shutdown is required before working inside the computer."),
+            ("s02", "Switch the power supply unit (PSU) to 0 (OFF).", "toggle", "psu_switch", "This prevents the PSU from supplying power to the system."),
+            ("s03", "Disconnect the AC power cable from the back of the computer.", "remove", "power_cable", "Never remove internal components while the PC is connected to mains power."),
+            ("s04", "Remove the tempered-glass side panel. Touch unpainted metal on the case or use an anti-static wrist strap before handling the graphics card.", "remove", "glass_panel", "This gives access to the graphics card and helps reduce electrostatic-discharge risk."),
+            ("s05", "Disconnect the graphics card's PCIe power cable from the card.", "remove", "cable_gpu", "Release the connector latch and pull the plug by its housing, not by the wires."),
+            ("s06", "Remove the existing graphics card from the PCIe slot. Release the slot latch and remove the bracket screws first.", "remove", "gpu", "Support the card while releasing it so that it does not drop or bend the PCIe slot."),
+            ("s07", "Install the replacement graphics card into the PCIe x16 slot. Press evenly until the slot latch engages, then secure the bracket.", "install", "gpu", "Align the card with the slot and avoid forcing it. Check the card is fully seated."),
+            ("s08", "Reconnect the PCIe power cable to the replacement graphics card.", "install", "cable_gpu", "Make sure the connector is fully seated and its latch clicks into place."),
+            ("s09", "Reinstall the tempered-glass side panel.", "install", "glass_panel", "Check that no cables are trapped and the panel is properly secured."),
+            ("s10", "Reconnect the AC power cable to the computer.", "install", "power_cable", "Reconnect mains power only after the case is closed."),
+            ("s11", "Switch the PSU back to I (ON).", "toggle", "psu_switch", "The computer can now receive power."),
+            ("s12", "Press the case power button to start the PC.", "select", "power_button", "Check that the system starts and detects the replacement graphics card."),
+        ]
+    elif variant == "fans":
+        definitions = [
+            ("s01", "Shut down the PC through its operating system. Wait until all fans and lights have stopped, then click the case power button to confirm shutdown.", "select", "power_button", "A full shutdown is required before working inside the computer."),
+            ("s02", "Switch the power supply unit (PSU) to 0 (OFF).", "toggle", "psu_switch", "This prevents the PSU from supplying power to the system."),
+            ("s03", "Disconnect the AC power cable from the back of the computer.", "remove", "power_cable", "Never replace fans while the PC is connected to mains power."),
+            ("s04", "Remove the tempered-glass side panel. Touch unpainted metal on the case or use an anti-static wrist strap before handling internal parts.", "remove", "glass_panel", "This gives access to the case fans and their motherboard headers."),
+            ("s05", "Remove the upper front case fan. Disconnect its 3-pin or 4-pin fan header before removing it.", "remove", "front_fan_1", "Pull the connector by its housing, not by the wires. Keep track of the mounting screws."),
+            ("s06", "Remove the middle front case fan and disconnect its fan header.", "remove", "front_fan_2", "Keep the fan screws together so they can be reused for the replacement."),
+            ("s07", "Remove the lower front case fan and disconnect its fan header.", "remove", "front_fan_3", "Make sure all three original front fans have been removed."),
+            ("s08", "Install the replacement upper front fan and connect its fan header to a compatible motherboard fan header.", "install", "front_fan_1", "Match the airflow arrow on the fan frame to the intended front-to-back airflow direction."),
+            ("s09", "Install the replacement middle front fan and connect its fan header.", "install", "front_fan_2", "Tighten the screws evenly without overtightening them."),
+            ("s10", "Install the replacement lower front fan and connect its fan header.", "install", "front_fan_3", "Check that the fan cable cannot touch the blades."),
+            ("s11", "Reinstall the tempered-glass side panel.", "install", "glass_panel", "Check that no cables are trapped and the panel is properly secured."),
+            ("s12", "Reconnect the AC power cable to the computer.", "install", "power_cable", "Reconnect mains power only after the case is closed."),
+            ("s13", "Switch the PSU back to I (ON).", "toggle", "psu_switch", "The computer can now receive power."),
+            ("s14", "Press the case power button to start the PC. Check that the replacement fans spin freely.", "select", "power_button", "Listen for unusual noise and confirm that all replacement fans operate."),
+        ]
+    else:
+        return None
+
+    return [
+        Step(
+            id=step_id,
+            instruction=instruction,
+            expected_action=action,
+            component_id=component_id,
+            explanation=explanation,
+        )
+        for step_id, instruction, action, component_id, explanation in definitions
+    ]
 
 VALID_CONDITIONS = {
     "A": Condition.A_MANUAL,
@@ -132,6 +186,10 @@ def background_tick(session_controller, session_stop_event):
             if session_controller.completed or session_controller.aborted:
                 break
 
+            # Nothing moves while the session is paused.
+            if session_controller.paused:
+                continue
+
             current_time = now_ms()
 
             # Update the secondary task.
@@ -198,6 +256,14 @@ def reset_session():
         # Load a fresh copy of the procedure.
         procedure = load_procedure(PROCEDURE_PATH)
 
+        # The RAM version uses the original JSON procedure. GPU and fan
+        # versions receive their own real replacement steps.
+        variant_steps = build_variant_steps(current_variant)
+        if variant_steps is not None:
+            procedure.steps = variant_steps
+            procedure.procedure_id = f"{procedure.procedure_id}_{current_variant}"
+            procedure.content_version = f"{procedure.content_version}-{current_variant}"
+
         # Give this session a unique identifier.
         session_id = uuid.uuid4().hex[:12]
 
@@ -226,29 +292,13 @@ def reset_session():
             session_id,
         )
 
-        # Give the new session its own timer.
-        session_start_time = now_ms()
-
-        class MockSched:
-
-            def elapsed_ms(self):
-                return now_ms() - session_start_time
-
-            def cancel_all(self):
-                pass
-
-            def pause(self):
-                pass
-
-            def resume(self):
-                pass
-
         # Create a completely new controller.
         new_controller = SessionController(
             procedure,
             ctx,
             new_logger,
-            MockSched(),
+            # Pause-aware, so paused time is left out of elapsed_ms.
+            Scheduler(),
         )
 
         # Start at tutorial step zero.
@@ -435,6 +485,7 @@ def get_state():
 
         return {
             "status": status,
+            "paused": controller.paused,
             "failure_reason": failure_reason,
 
             "step_index": controller.step_index,
@@ -500,6 +551,9 @@ async def handle_click(request: Request):
 
     data = await request.json()
 
+    # "outcome" tells the frontend which sound to play.
+    outcome = Outcome.IGNORED
+
     with session_lock:
 
         if (
@@ -508,14 +562,46 @@ async def handle_click(request: Request):
             and not controller.aborted
         ):
 
-            controller.handle_click(
+            outcome = controller.handle_click(
                 data["component_id"],
                 now_ms(),
                 data.get("xn", 0.5),
                 data.get("yn", 0.5),
             )
 
-    return {"ok": True}
+    return {"ok": True, "outcome": outcome.value}
+
+
+# ============================================================
+# PAUSE AND RESUME
+# ============================================================
+
+def set_paused(paused: bool):
+
+    with session_lock:
+
+        if controller is None:
+            return {"ok": False, "paused": False}
+
+        if paused:
+            controller.pause(now_ms())
+
+        else:
+            controller.resume(now_ms())
+
+        return {"ok": True, "paused": controller.paused}
+
+
+@app.post("/pause")
+def pause_endpoint():
+
+    return set_paused(True)
+
+
+@app.post("/resume")
+def resume_endpoint():
+
+    return set_paused(False)
 
 
 # ============================================================
@@ -533,6 +619,7 @@ def handle_secondary():
             controller is not None
             and not controller.completed
             and not controller.aborted
+            and not controller.paused
         ):
 
             vented = controller.secondary.correct(now_ms())

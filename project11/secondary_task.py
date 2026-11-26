@@ -32,6 +32,13 @@ class SecondaryTask:
         self._last_tick_ms = now_ms
         self.state.value = 0.5
 
+    def shift(self, delta_ms: int) -> None:
+        """Skip over a pause of delta_ms milliseconds."""
+        self._last_tick_ms += delta_ms
+        self._last_correct_ms += delta_ms
+        if self.state.out_of_band_since_ms:
+            self.state.out_of_band_since_ms += delta_ms
+
     def tick(self, now_ms: int) -> None:
         dt = (now_ms - self._last_tick_ms) / 1000.0
         self._last_tick_ms = now_ms

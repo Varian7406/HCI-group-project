@@ -335,6 +335,82 @@
             background: #9c2828;
         }
 
+        /* --- PAUSE BUTTON AND PAUSE SCREEN --- */
+        #topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        #pause-btn {
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #eee;
+            background: #303846;
+            border: 1px solid #5a6478;
+            border-radius: 4px;
+            cursor: pointer;
+            pointer-events: auto;
+        }
+
+        #pause-btn:hover {
+            background: #404a5c;
+        }
+
+        /* Covers the whole window, instructions included, and is
+           opaque so a pause cannot be used as extra study time. */
+        #pause-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+            text-align: center;
+            background: radial-gradient(ellipse at center, #1c2a40, #080b11);
+        }
+
+        #pause-screen.visible {
+            display: flex;
+        }
+
+        #pause-screen h1 {
+            margin: 0;
+            font-size: 46px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #5da9ed;
+        }
+
+        #pause-screen p {
+            margin: 0;
+            max-width: 540px;
+            line-height: 1.6;
+            color: #c9ccd6;
+        }
+
+        #resume-btn {
+            margin-top: 8px;
+            padding: 14px 34px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: white;
+            background: #143049;
+            border: 1px solid #5da9ed;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        #resume-btn:hover {
+            background: #1d466b;
+        }
+
         /* --- COMPLETION SCREEN --- */
         #complete-screen {
             position: absolute;
@@ -432,13 +508,17 @@
 
         <div id="topbar">
             <strong>Project 11 — PC Training</strong>
-            <span id="status">Connecting...</span>
+            <div id="topbar-right">
+                <span id="status">Connecting...</span>
+                <button id="pause-btn" type="button">Pause (P)</button>
+            </div>
         </div>
 
         <canvas id="pc-view"></canvas>
 
         <div id="hint">
-            Drag to rotate · Scroll to zoom · Click components to interact · Press <strong>G</strong> to vent heat
+            Drag to rotate · Scroll to zoom · Click components to interact · Press <strong>G</strong> to vent heat ·
+            Press <strong>P</strong> to pause
         </div>
 
         <div id="explosion-flash"></div>
@@ -504,6 +584,16 @@
 
     </aside>
 
+    <div id="pause-screen" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <h1 id="pause-title">Paused</h1>
+        <p>
+            The timer, temperature gauge and any safety alert are
+            frozen. Press <kbd>P</kbd> or <kbd>Esc</kbd>, or use the
+            button, to carry on where you left off.
+        </p>
+        <button id="resume-btn" type="button">Resume</button>
+    </div>
+
 
     <script type="module">
 
@@ -558,6 +648,9 @@
         // Set once the overheat explosion has fired; the fail flow
         // must only trigger a single time per session.
         let experimentFailed = false;
+
+        // True while the pause screen is up.
+        let isPaused = false;
 
 
         // ============================================================
@@ -3632,10 +3725,25 @@
 
             if (!object) return;
 
+            // The three GPU fans are separate pickable groups in the
+            // model, but physically belong to the graphics card.
+            // Hide/show them together with the card itself.
+            const attachedGpuParts = (
+                id === 'gpu'
+                    ? ['gpu_fan_1', 'gpu_fan_2', 'gpu_fan_3']
+                    : []
+            );
+
             if (action === 'remove') {
 
                 // Hide the real component.
                 object.visible = false;
+
+                for (const partId of attachedGpuParts) {
+                    if (components[partId]) {
+                        components[partId].visible = false;
+                    }
+                }
 
                 // Remember that its mounting position is empty.
                 removedComponents.add(id);
@@ -3649,6 +3757,15 @@
 
                 // Make it visible again.
                 object.visible = true;
+
+                for (const partId of attachedGpuParts) {
+                    if (components[partId]) {
+                        components[partId].position.copy(
+                            originalPositions.get(partId)
+                        );
+                        components[partId].visible = true;
+                    }
+                }
 
                 removedComponents.delete(id);
 
@@ -3881,7 +3998,8 @@
 
             if (
                 !currentState ||
-                currentState.status !== 'running'
+                currentState.status !== 'running' ||
+                isPaused
             ) {
                 return;
             }
@@ -3896,9 +4014,14 @@
                     component => component.id === id
                 );
 
-            if (!knownComponent) return;
+            if (!knownComponent) {
+                playClickSound();
+                return;
+            }
 
             const previousState = currentState;
+
+            const versionAtClick = pauseVersion;
 
             try {
 
@@ -3920,6 +4043,16 @@
 
                 if (!clickResponse.ok) {
                     throw new Error('Click request failed');
+                }
+
+                // The server decides whether this was the wrong part,
+                // so a correct emergency response is not buzzed.
+                const { outcome } = await clickResponse.json();
+
+                if (outcome === 'rejected') {
+                    playWrongSound();
+                } else {
+                    playClickSound();
                 }
 
 
@@ -3950,6 +4083,10 @@
 
                 // A hazard response does not advance the normal step.
                 // Therefore, it does not move the clicked component.
+
+                // Skip a reply that was overtaken by a pause or
+                // resume; the next poll brings the fresh state.
+                if (versionAtClick !== pauseVersion) return;
 
                 currentState = nextState;
 
@@ -4142,15 +4279,25 @@
 
             try {
 
+                const versionAtRequest = pauseVersion;
+
                 const response = await fetch('/state');
 
                 if (!response.ok) {
                     throw new Error('Server returned an error');
                 }
 
-                currentState = await response.json();
+                const state = await response.json();
 
-                updateUI(currentState);
+                // Ignore a reply that was overtaken by a pause or
+                // resume while it was on its way.
+                if (versionAtRequest === pauseVersion) {
+
+                    currentState = state;
+
+                    updateUI(currentState);
+
+                }
 
             } catch (error) {
 
@@ -4218,8 +4365,24 @@
         document.addEventListener('keydown', async (event) => {
 
             if (
+                (event.code === 'KeyP' || event.code === 'Escape') &&
+                !event.repeat &&
+                !event.ctrlKey &&
+                !event.metaKey
+            ) {
+
+                event.preventDefault();
+
+                setPaused(!isPaused);
+
+                return;
+
+            }
+
+            if (
                 event.code === 'KeyG' &&
-                !event.repeat
+                !event.repeat &&
+                !isPaused
             ) {
 
                 event.preventDefault();
@@ -4469,6 +4632,57 @@
         }
 
 
+        // One short synthesised tone, used by the click sounds.
+        function playTone(type, startHz, endHz, delay, duration, volume) {
+
+            const ctx = audioContext;
+
+            const start = ctx.currentTime + delay;
+
+            const oscillator = ctx.createOscillator();
+
+            oscillator.type = type;
+            oscillator.frequency.setValueAtTime(startHz, start);
+            oscillator.frequency.exponentialRampToValueAtTime(
+                endHz,
+                start + duration
+            );
+
+            const gain = ctx.createGain();
+
+            gain.gain.setValueAtTime(0.001, start);
+            gain.gain.exponentialRampToValueAtTime(volume, start + 0.005);
+            gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+
+            oscillator.connect(gain);
+            gain.connect(ctx.destination);
+            oscillator.start(start);
+            oscillator.stop(start + duration);
+
+        }
+
+
+        // A short, bright tick for clicking a part.
+        function playClickSound() {
+
+            if (!audioContext) return;
+
+            playTone('triangle', 1200, 700, 0, 0.07, 0.3);
+
+        }
+
+
+        // Two low buzzes for clicking the wrong part.
+        function playWrongSound() {
+
+            if (!audioContext) return;
+
+            playTone('square', 220, 180, 0, 0.14, 0.18);
+            playTone('square', 165, 120, 0.17, 0.22, 0.18);
+
+        }
+
+
         // Fiery debris burst, advanced every frame in animate().
         let explosion = null;
 
@@ -4619,6 +4833,132 @@
 
 
         // ============================================================
+        // 37c. PAUSE AND RESUME
+        // ============================================================
+
+        const pauseScreen =
+            document.getElementById('pause-screen');
+
+        const pauseButton =
+            document.getElementById('pause-btn');
+
+        const resumeButton =
+            document.getElementById('resume-btn');
+
+        // Goes up on every pause or resume, so older server
+        // replies can be recognised and ignored.
+        let pauseVersion = 0;
+
+        let pauseRequestPending = false;
+
+        let pausedAt = 0;
+
+
+        function showPaused(paused) {
+
+            if (paused === isPaused) return;
+
+            isPaused = paused;
+
+            pauseScreen.classList.toggle('visible', paused);
+
+            controls.enabled = !paused;
+
+            pointerStart = null;
+
+            if (paused) {
+
+                pausedAt = performance.now();
+
+                // Freeze the vent recharge countdown.
+                clearTimeout(ventCooldownTimer);
+
+                ventCooldownTimer = null;
+
+                resumeButton.focus();
+
+            } else {
+
+                resumeButton.blur();
+
+                lastVentAt += performance.now() - pausedAt;
+
+                const remaining = Math.ceil(
+                    (VENT_COOLDOWN_MS - (performance.now() - lastVentAt)) / 1000
+                );
+
+                if (remaining > 0) {
+                    showVentCooldown(remaining);
+                } else {
+                    ventHintElement.innerHTML = ventHintDefault;
+                }
+
+            }
+
+        }
+
+
+        async function setPaused(paused) {
+
+            if (
+                pauseRequestPending ||
+                !currentState ||
+                currentState.status !== 'running'
+            ) {
+                return;
+            }
+
+            pauseRequestPending = true;
+
+            pauseVersion++;
+
+            try {
+
+                const response = await fetch(
+                    paused ? '/pause' : '/resume',
+                    { method: 'POST', cache: 'no-store' }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Server returned an error');
+                }
+
+                const data = await response.json();
+
+                // Show what the server actually did.
+                if (data.ok) {
+                    showPaused(data.paused);
+                }
+
+            } catch (error) {
+
+                console.error('Pause request failed:', error);
+
+                statusElement.textContent = 'Could not pause or resume';
+
+            } finally {
+
+                pauseVersion++;
+
+                pauseRequestPending = false;
+
+            }
+
+        }
+
+
+        pauseButton.addEventListener('click', () => {
+
+            pauseButton.blur();
+
+            setPaused(true);
+
+        });
+
+        resumeButton.addEventListener('click', () => setPaused(false));
+
+
+        // ============================================================
         // 38. RESIZE
         // ============================================================
 
@@ -4676,7 +5016,10 @@
 
             // Seconds since the previous frame, capped so a long
             // freeze cannot make the easing jump.
-            const dt = Math.min((now - lastFrameTime) / 1000, 0.1);
+            // Zero while paused, which freezes the fans and lights.
+            const dt = isPaused
+                ? 0
+                : Math.min((now - lastFrameTime) / 1000, 0.1);
 
             lastFrameTime = now;
 

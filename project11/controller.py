@@ -43,6 +43,8 @@ class SessionController:
         self.started_at: Optional[int] = None
         self.completed: bool = False
         self.aborted: bool = False
+        self.paused: bool = False
+        self._paused_at_ms: int = 0
         self._last_accepted: Tuple[Optional[str], int] = (None, -(10**9))
 
     def start(self, now_ms: int) -> None:
@@ -57,7 +59,7 @@ class SessionController:
 
     def handle_click(self, component_id: str, now_ms: int,
                      x_norm: float, y_norm: float) -> Outcome:
-        if self.completed or self.aborted:
+        if self.completed or self.aborted or self.paused:
             return Outcome.IGNORED
 
         last_cid, last_t = self._last_accepted
@@ -111,11 +113,23 @@ class SessionController:
         return prev
 
     def pause(self, now_ms: int) -> None:
+        if self.paused or self.completed or self.aborted:
+            return
         self._emit("PAUSE_STARTED")
         self.sched.pause()
+        self.paused = True
+        self._paused_at_ms = now_ms
 
     def resume(self, now_ms: int) -> None:
+        if not self.paused:
+            return
+        # Move the gauge and hazard timestamps forward, so the time
+        # spent paused does not count against either of them.
+        paused_for = now_ms - self._paused_at_ms
+        self.secondary.shift(paused_for)
+        self.hazard.shift(paused_for)
         self.sched.resume()
+        self.paused = False
         self._emit("PAUSE_ENDED")
 
     def abort(self, now_ms: int) -> None:

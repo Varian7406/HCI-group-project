@@ -78,3 +78,25 @@ def test_double_click_tail_is_ignored_not_an_error(ctrl):
     # because s02 expects component b).
     assert c.handle_click("a", 600, 0.2, 0.2) == Outcome.REJECTED
     assert c.step_index == 1
+
+
+def test_clicks_ignored_while_paused(ctrl):
+    c, _ = ctrl
+    c.pause(100)
+    assert c.handle_click("a", 200, 0.2, 0.2) == Outcome.IGNORED
+    assert c.step_index == 0
+    c.resume(300)
+    assert c.handle_click("a", 400, 0.2, 0.2) == Outcome.ACCEPTED
+
+
+def test_pause_freezes_gauge_and_hazard(ctrl):
+    c, _ = ctrl
+    c.secondary.tick(1000)
+    value = c.secondary.state.value
+    c.hazard.present(1000)
+    c.pause(1000)
+    c.resume(61000)
+    c.secondary.tick(61000)
+    assert c.secondary.state.value == pytest.approx(value)
+    assert not c.hazard.miss_if_expired(61000)
+    assert c.hazard.state.presented_at_ms == 61000

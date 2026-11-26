@@ -32,6 +32,11 @@ class HazardManager:
     def armed(self) -> bool:
         return self._armed and not self.state.active and not self.state.responded
 
+    def shift(self, delta_ms: int) -> None:
+        """Skip over a pause, so it adds no response time."""
+        if self.state.active and not self.state.responded:
+            self.state.presented_at_ms += delta_ms
+
     def present(self, now_ms: int) -> None:
         self.state.active = True
         self.state.presented_at_ms = now_ms
