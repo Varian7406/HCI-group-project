@@ -1,5 +1,10 @@
 
 
+from __future__ import annotations
+
+import csv
+import random
+import re
 import threading
 import time
 import uuid
@@ -45,11 +50,45 @@ app.mount(
 # POST /condition before the training session starts.
 current_condition = Condition.B_OVERLAY
 
+# The participant number entered on the welcome page. It is used
+# as the participant_code in every logged event, so the data of
+# each participant can be told apart in the CSV files.
+current_participant = "WEB_USER"
+
+# The hardware version of the PC shown in the session. Every
+# condition (A, B, C) has three versions that each change one
+# component separately: "ram" (different RAM), "gpu" (different
+# graphics card) and "fans" (all fans different). When the welcome
+# page does not pick one, a version is chosen at random.
+VARIANTS = ["ram", "gpu", "fans"]
+
+current_variant = "ram"
+
 VALID_CONDITIONS = {
     "A": Condition.A_MANUAL,
     "B": Condition.B_OVERLAY,
     "C": Condition.C_EXPLANATORY,
 }
+
+# Participant numbers: letters, digits, dashes and underscores.
+PARTICIPANT_PATTERN = re.compile(r"^[A-Za-z0-9_-]{2,32}$")
+
+
+def sanitize_participant(raw: str) -> str | None:
+    """
+    Normalise a participant number, or return None when it is
+    not usable (empty, too short, or contains other characters).
+    """
+
+    if raw is None:
+        return None
+
+    code = raw.strip()
+
+    if not PARTICIPANT_PATTERN.match(code):
+        return None
+
+    return code
 
 PROCEDURE_PATH = (
     BASE_DIR / "assets" / "procedures" / "example_procedure.json"
@@ -57,6 +96,14 @@ PROCEDURE_PATH = (
 
 LOG_DIR = BASE_DIR / "data" / "raw-local"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+# One summary row per finished session (completed or failed),
+# appended here so progress can be checked at a glance.
+SUMMARY_PATH = LOG_DIR / "participant_summaries.csv"
+
+# The session id already written to the summary file, so a
+# finished session is never summarised twice.
+last_summarised_session = None
 
 controller = None
 logger = None
@@ -155,7 +202,7 @@ def reset_session():
         session_id = uuid.uuid4().hex[:12]
 
         ctx = SessionContext(
-            participant_code="WEB_USER",
+            participant_code=current_participant,
             session_id=session_id,
             condition=current_condition,
             condition_order=1,
@@ -166,8 +213,16 @@ def reset_session():
         # EventLogger opens the CSV in write mode.
         # Therefore, each fresh session starts with a clean log.
                # Create a separate log file for this training attempt.
+        # The filename carries the participant number and the
+        # condition, so the data of each attempt is identifiable
+        # without opening the file.
         new_logger = EventLogger(
-            LOG_DIR / f"web_attempt_{session_id}.csv",
+            LOG_DIR / (
+                f"{current_participant}_"
+                f"{current_condition.value}_"
+                f"{current_variant}_"
+                f"{session_id}.csv"
+            ),
             session_id,
         )
 
@@ -227,27 +282,55 @@ def reset_session():
 @app.post("/condition")
 async def select_condition(request: Request):
     """
-    Called by the welcome page when the participant picks a
-    condition. Sets the active condition and starts a fresh
-    session under it.
+    Called by the welcome page when the participant enters their
+    number and picks a condition. Sets the participant and the
+    active condition, then starts a fresh session under them.
     """
 
     global current_condition
+    global current_participant
+    global current_variant
 
     data = await request.json()
+
+    participant = sanitize_participant(data.get("participant_id"))
+
+    if participant is None:
+        return {
+            "ok": False,
+            "message": (
+                "Please enter a participant number of 2-32 "
+                "letters, digits, dashes or underscores."
+            ),
+        }
 
     chosen = str(data.get("condition", "")).upper()
 
     if chosen not in VALID_CONDITIONS:
         return {"ok": False, "message": "Unknown condition."}
 
+    # The hardware version: taken from the request when it names
+    # one of the three versions, otherwise drawn at random, so
+    # every session sees one of the three versions of its
+    # condition.
+    requested_variant = str(data.get("variant", "")).lower()
+
+    if requested_variant in VARIANTS:
+        current_variant = requested_variant
+
+    else:
+        current_variant = random.choice(VARIANTS)
+
+    current_participant = participant
     current_condition = VALID_CONDITIONS[chosen]
 
     session_id = reset_session()
 
     return {
         "ok": True,
+        "participant_id": current_participant,
         "condition": current_condition.value,
+        "variant": current_variant,
         "session_id": session_id,
         "message": f"Condition {current_condition.value} started.",
     }
@@ -382,6 +465,10 @@ def get_state():
 
             "condition": current_condition.value,
 
+            "participant_code": current_participant,
+
+            "variant": current_variant,
+
             "secondary": secondary,
 
             "hazard": {
@@ -453,6 +540,85 @@ def handle_secondary():
     # "vented" tells the frontend whether the press was accepted
     # or blocked by the cooldown, so its countdown stays in sync.
     return {"ok": True, "vented": vented}
+
+
+# ============================================================
+# FINISH SESSION (SAVE PROGRESS)
+# ============================================================
+
+SUMMARY_FIELDS = [
+    "saved_at",
+    "participant_code",
+    "condition",
+    "variant",
+    "session_id",
+    "outcome",
+    "steps_completed",
+    "total_steps",
+    "elapsed_ms",
+]
+
+
+@app.post("/finish")
+def finish_session():
+    """
+    Called once by the training page when the session ends,
+    either completed or failed. Appends one summary row for the
+    participant, so their progress is saved under their number.
+    """
+
+    global last_summarised_session
+
+    with session_lock:
+
+        if controller is None:
+            return {"ok": False, "message": "No active session."}
+
+        if controller.completed:
+            outcome = "completed"
+
+        elif controller.aborted:
+            outcome = "aborted"
+
+        else:
+            # The session is still running: nothing to save yet.
+            return {"ok": False, "message": "Session still running."}
+
+        if last_summarised_session == controller.ctx.session_id:
+            return {"ok": True, "message": "Already saved."}
+
+        SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+        is_new_file = not SUMMARY_PATH.exists()
+
+        try:
+            with SUMMARY_PATH.open("a", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(f, fieldnames=SUMMARY_FIELDS)
+
+                if is_new_file:
+                    writer.writeheader()
+
+                writer.writerow({
+                    "saved_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "participant_code": controller.ctx.participant_code,
+                    "condition": controller.ctx.condition.value,
+                    "variant": current_variant,
+                    "session_id": controller.ctx.session_id,
+                    "outcome": outcome,
+                    "steps_completed": controller.step_index,
+                    "total_steps": len(controller.proc.steps),
+                    "elapsed_ms": controller.sched.elapsed_ms(),
+                })
+        except OSError as e:
+            return {"ok": False, "message": f"Could not save: {e}"}
+
+        last_summarised_session = controller.ctx.session_id
+
+        return {
+            "ok": True,
+            "outcome": outcome,
+            "message": "Progress saved.",
+        }
 
 
 # ============================================================

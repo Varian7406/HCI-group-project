@@ -21,19 +21,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Project 11 - PC Training</title>
 
-    <!-- Load Three.js from the CDN -->
+    <!-- Three.js is vendored locally (static/vendor/three), so the
+         page loads fully offline with no CDN or internet needed. -->
     <script type="importmap">
     {
         "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            "three": "/static/vendor/three/build/three.module.js",
+            "three/addons/": "/static/vendor/three/examples/jsm/"
         }
     }
     </script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
-
         * {
             box-sizing: border-box;
         }
@@ -336,6 +335,72 @@
             background: #9c2828;
         }
 
+        /* --- COMPLETION SCREEN --- */
+        #complete-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            text-align: center;
+            background: radial-gradient(ellipse at center,
+                    rgba(6, 46, 24, 0.90),
+                    rgba(2, 10, 5, 0.97));
+        }
+
+        #complete-screen.visible {
+            display: flex;
+        }
+
+        #complete-screen h1 {
+            margin: 0;
+            font-size: 46px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: #4ade80;
+            text-shadow: 0 0 26px rgba(74, 222, 128, 0.5);
+        }
+
+        #complete-screen p {
+            margin: 0;
+            max-width: 540px;
+            line-height: 1.6;
+            color: #c9ccd6;
+        }
+
+        #complete-participant {
+            padding: 6px 14px;
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 4px;
+            background: #14301f;
+            color: #4ade80;
+            border: 1px solid #4ade80;
+        }
+
+        #finish-btn {
+            margin-top: 8px;
+            padding: 14px 34px;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: white;
+            background: #14532d;
+            border: 1px solid #4ade80;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #finish-btn:hover {
+            background: #166534;
+        }
+
         #condition-badge {
             display: inline-block;
             margin-top: 8px;
@@ -386,6 +451,17 @@
                 reaches its maximum to keep the experiment running.
             </p>
             <button id="restart-btn">Restart Experiment</button>
+        </div>
+
+        <div id="complete-screen">
+            <h1>Session Complete</h1>
+            <p>
+                You finished every step of the training task. Your
+                progress has been recorded against your participant
+                number. Thank you for taking part.
+            </p>
+            <div id="complete-participant">PARTICIPANT -</div>
+            <button id="finish-btn">Return to Start</button>
         </div>
 
     </div>
@@ -499,7 +575,7 @@
             100
         );
 
-        camera.position.set(6, 4, 8);
+        camera.position.set(4.5, 2.6, 6);
         camera.lookAt(0, 0, 0);
 
         const renderer = new THREE.WebGLRenderer({
@@ -539,14 +615,25 @@
             canvas
         );
 
-        controls.target.set(0, 0, 0);
+        // Orbit around the PC itself, not the room: the target sits
+        // at the centre of the case, so rotating always keeps the
+        // PC in view.
+        controls.target.set(0, -0.1, 0);
+
         controls.enableDamping = true;
         controls.dampingFactor = 0.06;
 
-        controls.minDistance = 5;
-        controls.maxDistance = 15;
+        // Panning would drag the target off the PC, so it is off.
+        controls.enablePan = false;
 
-        controls.maxPolarAngle = Math.PI * 0.85;
+        controls.minDistance = 3.5;
+        controls.maxDistance = 8.5;
+
+        // Full 360-degree rotation around the PC. The polar clamp
+        // only keeps the camera above the floor; the walls are
+        // one-sided and step aside, so no angle is blocked.
+        controls.minPolarAngle = 0.25;
+        controls.maxPolarAngle = 1.45;
 
 
         // ============================================================
@@ -571,6 +658,23 @@
 
         mainLight.shadow.mapSize.width = 2048;
         mainLight.shadow.mapSize.height = 2048;
+
+        // The shadow frustum must cover the whole room. With the
+        // default bounds, objects crossing the frustum edge made
+        // shadows pop in and out while orbiting, which read as the
+        // floor stuttering.
+        mainLight.shadow.camera.left = -14;
+        mainLight.shadow.camera.right = 14;
+        mainLight.shadow.camera.top = 14;
+        mainLight.shadow.camera.bottom = -14;
+        mainLight.shadow.camera.near = 0.5;
+        mainLight.shadow.camera.far = 40;
+        mainLight.shadow.camera.updateProjectionMatrix();
+
+        // Bias removes shadow acne: the flickering stripes the
+        // large floor plane showed as the camera angle changed.
+        mainLight.shadow.bias = -0.0004;
+        mainLight.shadow.normalBias = 0.03;
 
         scene.add(mainLight);
 
@@ -654,7 +758,7 @@
             })
         );
 
-        deskMat.position.set(0, -2.33, 0.1);
+        deskMat.position.set(0, -2.32, 0.1);
         deskMat.receiveShadow = true;
 
         scene.add(deskMat);
@@ -682,13 +786,101 @@
 
         scene.add(mugHandle);
 
+        // Desk lamp: weighted base, articulated arm and a shade
+        // with a warm glowing bulb, so the warm light on the desk
+        // has a visible source.
+        const lampGroup = new THREE.Group();
+
+        const lampMetal = new THREE.MeshStandardMaterial({
+            color: 0x8995a5,
+            metalness: 0.8,
+            roughness: 0.3
+        });
+
+        const lampDark = new THREE.MeshStandardMaterial({
+            color: 0x0a0c10,
+            metalness: 0.3,
+            roughness: 0.5
+        });
+
+        const lampBase = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.22, 0.26, 0.06, 24),
+            lampDark
+        );
+
+        lampBase.position.y = 0.03;
+        lampBase.castShadow = true;
+
+        lampGroup.add(lampBase);
+
+        const lampArmLower = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.03, 0.03, 1.1, 12),
+            lampMetal
+        );
+
+        lampArmLower.position.set(-0.18, 0.58, 0);
+        lampArmLower.rotation.z = 0.32;
+        lampArmLower.castShadow = true;
+
+        lampGroup.add(lampArmLower);
+
+        const lampArmUpper = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.028, 0.028, 0.9, 12),
+            lampMetal
+        );
+
+        lampArmUpper.position.set(-0.48, 1.32, 0);
+        lampArmUpper.rotation.z = -0.75;
+        lampArmUpper.castShadow = true;
+
+        lampGroup.add(lampArmUpper);
+
+        const lampShade = new THREE.Mesh(
+            new THREE.ConeGeometry(0.26, 0.3, 24, 1, true),
+            new THREE.MeshStandardMaterial({
+                color: 0x1c232e,
+                metalness: 0.5,
+                roughness: 0.4,
+                side: THREE.DoubleSide
+            })
+        );
+
+        lampShade.position.set(-0.78, 1.62, 0);
+        lampShade.rotation.z = 0.85;
+        lampShade.castShadow = true;
+
+        lampGroup.add(lampShade);
+
+        const lampBulb = new THREE.Mesh(
+            new THREE.SphereGeometry(0.09, 16, 12),
+            new THREE.MeshStandardMaterial({
+                color: 0xffe9c0,
+                emissive: 0xffd080,
+                emissiveIntensity: 2.5
+            })
+        );
+
+        lampBulb.position.set(-0.86, 1.55, 0);
+
+        lampGroup.add(lampBulb);
+
+        lampGroup.position.set(3.3, -2.35, -1.8);
+
+        scene.add(lampGroup);
+
+
+
 
         // ============================================================
         // 5b. ROOM ENVIRONMENT
         // ============================================================
 
-        // Walls use FrontSide so they are only visible from inside
-        // the room; orbiting to the outside never blocks the view.
+        // Walls are single-sided planes facing into the room, so
+        // they are visible from inside but see-through from
+        // outside: the camera can orbit the PC a full 360 degrees
+        // and no wall ever blocks the view. Each wall's decorations
+        // live in the same group and hide while the camera is on
+        // the far side of that wall.
         const wallMat = new THREE.MeshStandardMaterial({
             color: 0x414a5c,
             roughness: 0.92,
@@ -696,16 +888,20 @@
             side: THREE.FrontSide
         });
 
-        // Back wall.
+        const backWallGroup = new THREE.Group();
+
+        scene.add(backWallGroup);
+
+        // Back wall: a plane whose normal points into the room.
         const backWall = new THREE.Mesh(
-            new THREE.BoxGeometry(26, 9, 0.3),
+            new THREE.PlaneGeometry(26, 9),
             wallMat
         );
 
         backWall.position.set(0, 2.1, -7.6);
         backWall.receiveShadow = true;
 
-        scene.add(backWall);
+        backWallGroup.add(backWall);
 
         // Baseboard along the back wall.
         const baseboard = new THREE.Mesh(
@@ -718,18 +914,23 @@
 
         baseboard.position.set(0, -2.2, -7.42);
 
-        scene.add(baseboard);
+        backWallGroup.add(baseboard);
 
-        // Left wall.
+        const leftWallGroup = new THREE.Group();
+
+        scene.add(leftWallGroup);
+
+        // Left wall: rotated so its normal points into the room.
         const leftWall = new THREE.Mesh(
-            new THREE.BoxGeometry(0.3, 9, 22),
+            new THREE.PlaneGeometry(22, 9),
             wallMat
         );
 
+        leftWall.rotation.y = Math.PI / 2;
         leftWall.position.set(-7.6, 2.1, 0);
         leftWall.receiveShadow = true;
 
-        scene.add(leftWall);
+        leftWallGroup.add(leftWall);
 
         // Window frame on the left wall.
         const windowFrameMat = new THREE.MeshStandardMaterial({
@@ -747,7 +948,7 @@
         windowPane.rotation.y = Math.PI / 2;
         windowPane.position.set(-7.42, 1.3, 0.4);
 
-        scene.add(windowPane);
+        leftWallGroup.add(windowPane);
 
         // Frame border around the window.
         for (const [w, h, x, y] of [
@@ -765,7 +966,7 @@
 
             frameBar.position.set(-7.45, 1.3 + y, 0.4 + x);
 
-            scene.add(frameBar);
+            leftWallGroup.add(frameBar);
         }
 
         // Soft daylight spilling from the window.
@@ -787,7 +988,7 @@
 
         posterFrame.position.set(3.1, 1.1, -7.4);
 
-        scene.add(posterFrame);
+        backWallGroup.add(posterFrame);
 
         // Abstract poster art drawn on a canvas texture.
         const posterCanvas = document.createElement('canvas');
@@ -827,7 +1028,7 @@
 
         posterArt.position.set(3.1, 1.1, -7.35);
 
-        scene.add(posterArt);
+        backWallGroup.add(posterArt);
 
         // Wall shelf with books.
         const shelf = new THREE.Mesh(
@@ -838,7 +1039,7 @@
         shelf.position.set(-3.4, 0.6, -7.25);
         shelf.castShadow = true;
 
-        scene.add(shelf);
+        backWallGroup.add(shelf);
 
         const bookColors = [0x8a3b3b, 0x3b6a8a, 0x8a7a3b, 0x4a3b8a, 0x3b8a5c];
 
@@ -860,7 +1061,7 @@
 
             book.castShadow = true;
 
-            scene.add(book);
+            backWallGroup.add(book);
         }
 
         // Rug on the floor in front of the desk.
@@ -872,7 +1073,7 @@
             })
         );
 
-        rug.position.set(0, -2.33, 4.6);
+        rug.position.set(0, -2.31, 4.6);
         rug.receiveShadow = true;
 
         scene.add(rug);
@@ -953,7 +1154,7 @@
         clockRim.position.set(-0.6, 2.7, -7.4);
         clockRim.castShadow = true;
 
-        scene.add(clockRim);
+        backWallGroup.add(clockRim);
 
         const clockFace = new THREE.Mesh(
             new THREE.CircleGeometry(0.33, 32),
@@ -965,7 +1166,7 @@
 
         clockFace.position.set(-0.6, 2.7, -7.36);
 
-        scene.add(clockFace);
+        backWallGroup.add(clockFace);
 
         // Hour and minute hands, frozen at ten past ten. Each
         // hand is shifted so it pivots at its base, then rotated
@@ -978,7 +1179,7 @@
         hourHand.position.set(-0.6, 2.7, -7.33);
         hourHand.rotation.z = Math.PI / 6;
 
-        scene.add(hourHand);
+        backWallGroup.add(hourHand);
 
         const minuteGeo = new THREE.BoxGeometry(0.025, 0.26, 0.015);
         minuteGeo.translate(0, 0.13, 0);
@@ -988,7 +1189,7 @@
         minuteHand.position.set(-0.6, 2.7, -7.32);
         minuteHand.rotation.z = -Math.PI / 3;
 
-        scene.add(minuteHand);
+        backWallGroup.add(minuteHand);
 
         // Soft contact shadow under the case, so it sits on the
         // desk even where the sun does not reach.
@@ -1182,9 +1383,8 @@
 
                 const y = Math.random() * 512;
 
-                g.strokeStyle = `rgba(58,38,18,${
-                    0.06 + Math.random() * 0.16
-                })`;
+                g.strokeStyle = `rgba(58,38,18,${0.06 + Math.random() * 0.16
+                    })`;
 
                 g.lineWidth = 0.6 + Math.random() * 2.4;
 
@@ -1195,7 +1395,7 @@
                     g.lineTo(
                         x,
                         y + Math.sin(x * 0.012 + i * 1.7) * 7
-                            + (Math.random() - 0.5) * 3
+                        + (Math.random() - 0.5) * 3
                     );
                 }
 
@@ -1338,6 +1538,84 @@
             return t;
         }
 
+        // Procedural floor texture: large matte tiles with grout
+        // lines and per-tile shade variation, so the floor reads
+        // as a real surface instead of flat plastic.
+        function makeFloorTexture() {
+
+            const c = document.createElement('canvas');
+            c.width = c.height = 512;
+
+            const g = c.getContext('2d');
+
+            g.fillStyle = '#262c38';
+            g.fillRect(0, 0, 512, 512);
+
+            // Two tiles per texture edge, with grout between them.
+            const tiles = 2;
+            const size = 512 / tiles;
+
+            for (let ty = 0; ty < tiles; ty++) {
+                for (let tx = 0; tx < tiles; tx++) {
+
+                    const shade = 0.9 + Math.random() * 0.2;
+
+                    const base = Math.floor(38 * shade);
+
+                    g.fillStyle = `rgb(${base},${Math.floor(44 * shade)
+                        },${Math.floor(56 * shade)})`;
+
+                    g.fillRect(
+                        tx * size + 2,
+                        ty * size + 2,
+                        size - 4,
+                        size - 4
+                    );
+                }
+            }
+
+            // Fine speckle, like stone or concrete.
+            for (let i = 0; i < 2400; i++) {
+
+                const a = 0.02 + Math.random() * 0.05;
+
+                g.fillStyle = Math.random() < 0.5
+                    ? `rgba(255,255,255,${a})`
+                    : `rgba(0,0,0,${a})`;
+
+                g.fillRect(
+                    Math.random() * 512,
+                    Math.random() * 512,
+                    1 + Math.random() * 2,
+                    1 + Math.random() * 2
+                );
+            }
+
+            // Grout lines on top.
+            g.strokeStyle = 'rgba(10,13,18,0.9)';
+            g.lineWidth = 3;
+
+            for (let i = 0; i <= tiles; i++) {
+
+                g.beginPath();
+                g.moveTo(i * size, 0);
+                g.lineTo(i * size, 512);
+                g.stroke();
+
+                g.beginPath();
+                g.moveTo(0, i * size);
+                g.lineTo(512, i * size);
+                g.stroke();
+            }
+
+            const t = new THREE.CanvasTexture(c);
+            t.colorSpace = THREE.SRGBColorSpace;
+            t.wrapS = t.wrapT = THREE.RepeatWrapping;
+            t.repeat.set(7, 7);
+
+            return t;
+        }
+
         // Materials whose emissive colour is animated (RGB lighting).
         const rgbMats = [];
 
@@ -1360,6 +1638,7 @@
         const woodGrainTexture = makeWoodTexture();
         const wallPlasterTexture = makeWallTexture();
         const skyTexture = makeSkyTexture();
+        const floorTileTexture = makeFloorTexture();
 
         // The room surfaces are declared before this section, so
         // their textures are attached here. Colour goes white so
@@ -1378,9 +1657,10 @@
         woodDarkMat.map = woodGrainTexture;
         woodDarkMat.needsUpdate = true;
 
-        floor.material.roughness = 0.55;
-        floor.material.envMapIntensity = 0.15;
+        floor.material.color.set(0xffffff);
+        floor.material.map = floorTileTexture;
         floor.material.roughness = 0.7;
+        floor.material.envMapIntensity = 0.15;
         floor.material.needsUpdate = true;
 
         windowPane.material = new THREE.MeshBasicMaterial({
@@ -1512,6 +1792,328 @@
 
         };
 
+
+        // ============================================================
+        // 6b. HARDWARE VERSIONS (RAM / GPU / FANS)
+        // ============================================================
+        // Every condition runs in three versions that each change
+        // one component separately. A version is a set of spare
+        // materials swapped onto the relevant meshes; the original
+        // materials are remembered so a restart restores the base
+        // look before the next version is applied.
+
+        // The fans a "fans" version restyles: every fan in the
+        // case, including the CPU, PSU and graphics-card fans.
+        const FAN_COMPONENT_IDS = [
+            'cpu_fan',
+            'psu_fan',
+            'gpu_fan_1',
+            'gpu_fan_2',
+            'gpu_fan_3',
+            'front_fan_1',
+            'front_fan_2',
+            'front_fan_3',
+            'rear_fan',
+            'top_fan_1',
+            'top_fan_2'
+        ];
+
+        const variantMaterials = {
+
+            ram: {
+                // White heat spreaders with violet light bars.
+                body: new THREE.MeshStandardMaterial({
+                    color: 0xdfe3e8,
+                    metalness: 0.85,
+                    roughness: 0.3
+                }),
+                label: new THREE.MeshStandardMaterial({
+                    color: 0x6b28c9,
+                    metalness: 0.4,
+                    roughness: 0.45
+                }),
+                bar: makeRGBMaterial(0x2a0a4a)
+            },
+
+            gpu: {
+                // Crimson shroud with a gunmetal backplate.
+                shroud: new THREE.MeshStandardMaterial({
+                    color: 0x8c1d2f,
+                    metalness: 0.6,
+                    roughness: 0.35
+                }),
+                backplate: new THREE.MeshStandardMaterial({
+                    color: 0x23272e,
+                    metalness: 0.9,
+                    roughness: 0.22
+                })
+            },
+
+            fans: {
+                // White fan frames and blades with warm amber rings.
+                corner: new THREE.MeshStandardMaterial({
+                    color: 0xe8e4da,
+                    metalness: 0.3,
+                    roughness: 0.5
+                }),
+                blade: new THREE.MeshStandardMaterial({
+                    color: 0xf2efe8,
+                    metalness: 0.25,
+                    roughness: 0.55,
+                    side: THREE.DoubleSide
+                }),
+                ring: makeRGBMaterial(0x3a2506),
+                centre: new THREE.MeshStandardMaterial({
+                    color: 0xd9a441,
+                    metalness: 0.6,
+                    roughness: 0.3
+                })
+            }
+
+        };
+
+        // Every material swap made for the current version, so it
+        // can be undone before another version is applied.
+        const variantSwaps = [];
+
+        function swapMaterial(mesh, original, replacement) {
+
+            if (mesh.material !== original) return;
+
+            variantSwaps.push({ mesh, original });
+
+            mesh.material = replacement;
+
+        }
+
+        function resetVariant() {
+
+            for (const { mesh, original } of variantSwaps) {
+                mesh.material = original;
+            }
+
+            variantSwaps.length = 0;
+
+        }
+
+        function applyVariant(variant) {
+
+            resetVariant();
+
+            if (!variant || variant === 'none') return;
+
+            const materials = variantMaterials[variant];
+
+            if (!materials) return;
+
+            if (variant === 'ram') {
+
+                const ramGroup = components.ram;
+
+                if (!ramGroup) return;
+
+                ramGroup.traverse((node) => {
+
+                    if (!node.isMesh) return;
+
+                    swapMaterial(node, mat.metal, materials.body);
+                    swapMaterial(node, mat.dark, materials.label);
+                    swapMaterial(node, mat.ramBar, materials.bar);
+
+                });
+
+            }
+
+            if (variant === 'gpu') {
+
+                const gpuGroup = components.gpu;
+
+                if (!gpuGroup) return;
+
+                gpuGroup.traverse((node) => {
+
+                    if (!node.isMesh) return;
+
+                    swapMaterial(node, mat.gpu, materials.shroud);
+                    swapMaterial(node, mat.metal, materials.backplate);
+
+                });
+
+            }
+
+            if (variant === 'fans') {
+
+                for (const fanId of FAN_COMPONENT_IDS) {
+
+                    const fanGroup = components[fanId];
+
+                    if (!fanGroup) continue;
+
+                    fanGroup.traverse((node) => {
+
+                        if (!node.isMesh) return;
+
+                        swapMaterial(node, mat.shroud, materials.corner);
+                        swapMaterial(node, mat.fan, materials.blade);
+                        swapMaterial(node, mat.fanRing, materials.ring);
+                        swapMaterial(node, mat.gold, materials.centre);
+
+                    });
+
+                }
+
+            }
+
+        }
+
+
+        // Desk props: a screwdriver and a notepad with pencil, so
+        // the workspace reads as a build bench rather than an
+        // empty surface.
+        const screwdriver = new THREE.Group();
+
+        const screwHandle = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.055, 0.065, 0.34, 16),
+            new THREE.MeshStandardMaterial({
+                color: 0xc23b22,
+                roughness: 0.55,
+                metalness: 0.1
+            })
+        );
+
+        screwHandle.castShadow = true;
+
+        screwdriver.add(screwHandle);
+
+        const screwShaft = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.018, 0.018, 0.42, 10),
+            mat.metal
+        );
+
+        screwShaft.position.x = 0.38;
+        screwShaft.castShadow = true;
+
+        screwdriver.add(screwShaft);
+
+        screwdriver.rotation.z = Math.PI / 2;
+        screwdriver.rotation.y = 0.5;
+        screwdriver.position.set(-3.15, -2.29, 1.15);
+
+        scene.add(screwdriver);
+
+        const notepad = new THREE.Mesh(
+            new THREE.BoxGeometry(0.55, 0.03, 0.75),
+            new THREE.MeshStandardMaterial({
+                color: 0xe9e6dc,
+                roughness: 0.9
+            })
+        );
+
+        notepad.position.set(-3.05, -2.335, -0.5);
+        notepad.rotation.y = -0.25;
+        notepad.castShadow = true;
+        notepad.receiveShadow = true;
+
+        scene.add(notepad);
+
+        const pencil = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.018, 0.018, 0.4, 8),
+            new THREE.MeshStandardMaterial({
+                color: 0xd9a441,
+                roughness: 0.6
+            })
+        );
+
+        pencil.rotation.z = Math.PI / 2;
+        pencil.rotation.y = -0.1;
+        pencil.position.set(-2.95, -2.31, -0.15);
+
+        scene.add(pencil);
+
+        // Power strip on the floor behind the desk, with a cable
+        // running to a wall outlet, so the PC's power cable has a
+        // visible destination.
+        const powerStrip = new THREE.Group();
+
+        const stripBody = new THREE.Mesh(
+            new THREE.BoxGeometry(0.9, 0.07, 0.28),
+            new THREE.MeshStandardMaterial({
+                color: 0xe5e2da,
+                roughness: 0.7
+            })
+        );
+
+        stripBody.position.y = 0.035;
+        stripBody.castShadow = true;
+        stripBody.receiveShadow = true;
+
+        powerStrip.add(stripBody);
+
+        for (let i = 0; i < 4; i++) {
+
+            const socket = new THREE.Mesh(
+                new THREE.BoxGeometry(0.14, 0.02, 0.18),
+                mat.dark
+            );
+
+            socket.position.set(-0.3 + i * 0.2, 0.072, 0);
+
+            powerStrip.add(socket);
+
+        }
+
+        powerStrip.position.set(2.3, -2.34, -3.1);
+        powerStrip.rotation.y = 0.4;
+
+        scene.add(powerStrip);
+
+        // Wall outlet low on the back wall.
+        const outlet = new THREE.Group();
+
+        const outletPlate = new THREE.Mesh(
+            new THREE.BoxGeometry(0.22, 0.3, 0.03),
+            new THREE.MeshStandardMaterial({
+                color: 0xd8d5cc,
+                roughness: 0.8
+            })
+        );
+
+        outlet.add(outletPlate);
+
+        for (const sy of [-0.07, 0.07]) {
+
+            const socket = new THREE.Mesh(
+                new THREE.BoxGeometry(0.1, 0.1, 0.02),
+                mat.dark
+            );
+
+            socket.position.z = 0.02;
+            socket.position.y = sy;
+
+            outlet.add(socket);
+
+        }
+
+        outlet.position.set(2.3, -1.85, -7.43);
+
+        scene.add(outlet);
+
+        // Cable from the power strip to the wall outlet.
+        const stripCableCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(2.55, -2.3, -3.3),
+            new THREE.Vector3(2.75, -2.1, -4.6),
+            new THREE.Vector3(2.5, -1.95, -6.2),
+            new THREE.Vector3(2.3, -1.9, -7.35)
+        ]);
+
+        const stripCable = new THREE.Mesh(
+            new THREE.TubeGeometry(stripCableCurve, 32, 0.035, 8, false),
+            mat.sleeve
+        );
+
+        stripCable.castShadow = true;
+
+        scene.add(stripCable);
 
         // ============================================================
         // 7. COMPONENT MANAGEMENT
@@ -2865,6 +3467,49 @@
         }
 
         // ============================================================
+        // CASE EXTERIOR DETAILS
+        // ============================================================
+
+        // Magnetic dust filter over the top fans: honeycomb mesh
+        // in a dark frame, sitting just above the top panel.
+        roundedBox(
+            pcCase,
+            [2.75, 0.05, 1.95],
+            [0, 2.29, 0.05],
+            mat.filter,
+            0.02
+        );
+
+        roundedBox(
+            pcCase,
+            [2.85, 0.045, 2.05],
+            [0, 2.265, 0.05],
+            mat.dark,
+            0.02
+        );
+
+        // Under-glow LED strip along the bottom front edge, so the
+        // tower sits on a pool of RGB light like a real showcase
+        // build.
+        const underglow = new THREE.Mesh(
+            new THREE.BoxGeometry(2.7, 0.06, 0.05),
+            mat.ledStrip
+        );
+
+        underglow.position.set(0, -2.18, 1.05);
+
+        pcCase.add(underglow);
+
+        const underglowSide = new THREE.Mesh(
+            new THREE.BoxGeometry(0.05, 0.06, 2.0),
+            mat.ledStrip
+        );
+
+        underglowSide.position.set(1.42, -2.18, 0);
+
+        pcCase.add(underglowSide);
+
+        // ============================================================
         // AUTOMATICALLY FRAME THE PC MODEL
         // ============================================================
 
@@ -3334,10 +3979,9 @@
 
             if (state.status === 'completed') {
 
-                instructionElement.textContent =
-                    'Training task completed!';
-
-                stepElement.textContent = 'Completed';
+                // Show the completion screen once and save the
+                // participant's progress under their number.
+                showCompleteScreen(state);
 
                 targetId = null;
                 updateHighlight();
@@ -3354,6 +3998,10 @@
                 if (!experimentFailed) {
 
                     experimentFailed = true;
+
+                    // The failed attempt is also part of the
+                    // participant's data, so it is saved too.
+                    saveProgress();
 
                     triggerExplosion();
 
@@ -3409,8 +4057,15 @@
                 C: 'CONDITION C · EXPLANATORY'
             };
 
+            const variantLabels = {
+                ram: ' · RAM VERSION',
+                gpu: ' · GPU VERSION',
+                fans: ' · FAN VERSION'
+            };
+
             conditionBadge.textContent =
-                conditionLabels[state.condition] || 'CONDITION ?';
+                (conditionLabels[state.condition] || 'CONDITION ?')
+                + (variantLabels[state.variant] || '');
 
             // Explanatory condition.
             if (
@@ -3628,6 +4283,74 @@
 
         const restartButton =
             document.getElementById('restart-btn');
+
+        const completeScreen =
+            document.getElementById('complete-screen');
+
+        const completeParticipant =
+            document.getElementById('complete-participant');
+
+        const finishButton =
+            document.getElementById('finish-btn');
+
+        // Set once the completion screen is up; polling keeps
+        // running, so it must only be shown a single time.
+        let completeScreenShown = false;
+
+        // Set once /finish has been called for this session, so a
+        // finished session is never saved twice.
+        let progressSaved = false;
+
+
+        // Ask the server to write the summary row for this
+        // session. Called when the task is completed and when it
+        // fails, because both outcomes are part of the data.
+        async function saveProgress() {
+
+            if (progressSaved) return;
+
+            progressSaved = true;
+
+            try {
+
+                await fetch('/finish', {
+                    method: 'POST',
+                    cache: 'no-store'
+                });
+
+            } catch (error) {
+
+                console.error(
+                    'Could not save progress:',
+                    error
+                );
+
+            }
+
+        }
+
+
+        function showCompleteScreen(state) {
+
+            if (completeScreenShown) return;
+
+            completeScreenShown = true;
+
+            saveProgress();
+
+            completeParticipant.textContent =
+                `PARTICIPANT ${state.participant_code || '-'}`;
+
+            completeScreen.classList.add('visible');
+
+        }
+
+
+        finishButton.addEventListener('click', () => {
+
+            window.location.href = '/';
+
+        });
 
         // Audio is created lazily on the first user gesture, so the
         // browser's autoplay policy does not block the explosion.
@@ -3864,7 +4587,13 @@
 
             failScreen.classList.remove('visible');
 
+            completeScreen.classList.remove('visible');
+
             experimentFailed = false;
+
+            completeScreenShown = false;
+
+            progressSaved = false;
 
             if (explosion) {
 
@@ -3930,6 +4659,14 @@
         function animate() {
 
             controls.update();
+
+            // With a full 360-degree orbit the camera regularly
+            // ends up behind a wall. The walls themselves are
+            // see-through from outside; their decorations hide
+            // while the camera is on the far side, so nothing
+            // floats in front of the PC.
+            backWallGroup.visible = camera.position.z > -7.3;
+            leftWallGroup.visible = camera.position.x > -7.3;
 
             if (highlightBox) {
                 highlightBox.update();
@@ -4121,6 +4858,17 @@
 
                 targetId = null;
                 hoveredId = null;
+
+                completeScreenShown = false;
+
+                progressSaved = false;
+
+                // Apply this session's hardware version (different
+                // RAM, a different graphics card, or all fans
+                // different) before the first frame is shown.
+                resetVariant();
+
+                applyVariant(initialState.variant);
 
                 removedComponents.clear();
 

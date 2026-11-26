@@ -7,8 +7,6 @@
     <title>Project 11 - Choose a Condition</title>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap');
-
         * {
             box-sizing: border-box;
         }
@@ -84,9 +82,23 @@
             margin-bottom: 14px;
         }
 
-        .card-a .badge { background: #3b2f14; color: #facc15; border: 1px solid #facc15; }
-        .card-b .badge { background: #143049; color: #5da9ed; border: 1px solid #5da9ed; }
-        .card-c .badge { background: #163a26; color: #4ade80; border: 1px solid #4ade80; }
+        .card-a .badge {
+            background: #3b2f14;
+            color: #facc15;
+            border: 1px solid #facc15;
+        }
+
+        .card-b .badge {
+            background: #143049;
+            color: #5da9ed;
+            border: 1px solid #5da9ed;
+        }
+
+        .card-c .badge {
+            background: #163a26;
+            color: #4ade80;
+            border: 1px solid #4ade80;
+        }
 
         .card h2 {
             font-family: 'Montserrat', Arial, sans-serif;
@@ -115,6 +127,74 @@
             color: #facc15;
             min-height: 20px;
         }
+
+        .login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 30px;
+        }
+
+        .login label {
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #9aa4b5;
+        }
+
+        .login input {
+            width: 280px;
+            padding: 12px 16px;
+            font-size: 16px;
+            text-align: center;
+            letter-spacing: 1px;
+            color: #eee;
+            background: #11151d;
+            border: 1px solid #303846;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .login input:focus {
+            border-color: #e6a23c;
+        }
+
+        .login .hint {
+            font-size: 12px;
+            color: #6b7688;
+        }
+
+        .version {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            margin: 0 0 26px;
+        }
+
+        .version label {
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #9aa4b5;
+        }
+
+        .version select {
+            width: 280px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #eee;
+            background: #11151d;
+            border: 1px solid #303846;
+            border-radius: 6px;
+            outline: none;
+        }
+
+        .version select:focus {
+            border-color: #e6a23c;
+        }
     </style>
     <meta name="ai-disclosure" content="ai-autonomous" ai-model="GLM-5.3-Flash" ai-provider="Thaura">
     <meta name="generator" content="Thaura (GLM-5.3-Flash)">
@@ -126,9 +206,30 @@
 
     <p class="subtitle">
         Welcome. In this session you will assemble and maintain a PC in a
-        simulated 3D workspace. Please select the guidance condition you
-        have been assigned. A new training session will start immediately.
+        simulated 3D workspace. Enter your participant number, then select
+        the guidance condition you have been assigned. A new training
+        session will start immediately.
     </p>
+
+    <div class="login">
+        <label for="participant-id">Participant number</label>
+        <input id="participant-id" type="text" autocomplete="off" spellcheck="false" maxlength="32"
+            placeholder="e.g. P024" />
+        <span class="hint">
+            Letters, digits, dashes and underscores. Your progress is
+            saved under this number when you finish.
+        </span>
+    </div>
+
+    <div class="version">
+        <label for="variant-select">Hardware version</label>
+        <select id="variant-select">
+            <option value="">Random (one of the three)</option>
+            <option value="ram">Version 1: different RAM</option>
+            <option value="gpu">Version 2: different graphics card</option>
+            <option value="fans">Version 3: all fans different</option>
+        </select>
+    </div>
 
     <div class="cards">
 
@@ -171,8 +272,22 @@
     <script>
         const messageElement = document.getElementById('message');
         const cards = document.querySelectorAll('.card');
+        const participantInput = document.getElementById('participant-id');
+        const variantSelect = document.getElementById('variant-select');
 
         async function chooseCondition(condition) {
+
+            const participantId = participantInput.value.trim();
+
+            if (!participantId) {
+
+                messageElement.textContent =
+                    'Please enter your participant number first.';
+
+                participantInput.focus();
+
+                return;
+            }
 
             cards.forEach(card => card.disabled = true);
 
@@ -183,7 +298,11 @@
                 const response = await fetch('/condition', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ condition: condition })
+                    body: JSON.stringify({
+                        condition: condition,
+                        participant_id: participantId,
+                        variant: variantSelect.value
+                    })
                 });
 
                 if (!response.ok) {
@@ -212,6 +331,12 @@
             card.addEventListener('click', () => {
                 chooseCondition(card.dataset.condition);
             });
+        });
+
+        participantInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                participantInput.blur();
+            }
         });
     </script>
 
