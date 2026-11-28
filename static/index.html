@@ -794,7 +794,7 @@
         // ============================================================
 
         const floor = new THREE.Mesh(
-            new THREE.PlaneGeometry(30, 30),
+            new THREE.PlaneGeometry(44, 44),
             new THREE.MeshStandardMaterial({
                 color: 0x202530,
                 roughness: 0.85
@@ -821,7 +821,7 @@
         });
 
         const deskTop = new THREE.Mesh(
-            new THREE.BoxGeometry(8.4, 0.16, 5.4),
+            new THREE.BoxGeometry(10.8, 0.16, 6.8),
             woodMat
         );
 
@@ -833,18 +833,18 @@
 
         // Front edge trim of the desk.
         const deskEdge = new THREE.Mesh(
-            new THREE.BoxGeometry(8.4, 0.3, 0.14),
+            new THREE.BoxGeometry(10.8, 0.3, 0.14),
             woodDarkMat
         );
 
-        deskEdge.position.set(0, -2.47, 2.95);
+        deskEdge.position.set(0, -2.47, 3.63);
         deskEdge.castShadow = true;
 
         scene.add(deskEdge);
 
         // Dark desk mat under the PC.
         const deskMat = new THREE.Mesh(
-            new THREE.BoxGeometry(4.6, 0.03, 3.4),
+            new THREE.BoxGeometry(6.4, 0.03, 5.0),
             new THREE.MeshStandardMaterial({
                 color: 0x14181f,
                 roughness: 0.85
@@ -865,7 +865,7 @@
             })
         );
 
-        mug.position.set(2.9, -2.18, 1.7);
+        mug.position.set(4.0, -2.18, 2.2);
         mug.castShadow = true;
 
         scene.add(mug);
@@ -875,7 +875,7 @@
             mug.material
         );
 
-        mugHandle.position.set(3.08, -2.18, 1.7);
+        mugHandle.position.set(4.18, -2.18, 2.2);
 
         scene.add(mugHandle);
 
@@ -957,7 +957,7 @@
 
         lampGroup.add(lampBulb);
 
-        lampGroup.position.set(3.3, -2.35, -1.8);
+        lampGroup.position.set(4.2, -2.35, -2.2);
 
         scene.add(lampGroup);
 
@@ -987,25 +987,25 @@
 
         // Back wall: a plane whose normal points into the room.
         const backWall = new THREE.Mesh(
-            new THREE.PlaneGeometry(26, 9),
+            new THREE.PlaneGeometry(30, 9),
             wallMat
         );
 
-        backWall.position.set(0, 2.1, -7.6);
+        backWall.position.set(0, 2.1, -9.0);
         backWall.receiveShadow = true;
 
         backWallGroup.add(backWall);
 
         // Baseboard along the back wall.
         const baseboard = new THREE.Mesh(
-            new THREE.BoxGeometry(26, 0.28, 0.1),
+            new THREE.BoxGeometry(30, 0.28, 0.1),
             new THREE.MeshStandardMaterial({
                 color: 0x2a3140,
                 roughness: 0.8
             })
         );
 
-        baseboard.position.set(0, -2.2, -7.42);
+        baseboard.position.set(0, -2.2, -8.82);
 
         backWallGroup.add(baseboard);
 
@@ -1015,12 +1015,12 @@
 
         // Left wall: rotated so its normal points into the room.
         const leftWall = new THREE.Mesh(
-            new THREE.PlaneGeometry(22, 9),
+            new THREE.PlaneGeometry(26, 9),
             wallMat
         );
 
         leftWall.rotation.y = Math.PI / 2;
-        leftWall.position.set(-7.6, 2.1, 0);
+        leftWall.position.set(-9.0, 2.1, 0);
         leftWall.receiveShadow = true;
 
         leftWallGroup.add(leftWall);
@@ -1039,7 +1039,7 @@
         );
 
         windowPane.rotation.y = Math.PI / 2;
-        windowPane.position.set(-7.42, 1.3, 0.4);
+        windowPane.position.set(-8.82, 1.3, 0.4);
 
         leftWallGroup.add(windowPane);
 
@@ -1057,7 +1057,7 @@
                 windowFrameMat
             );
 
-            frameBar.position.set(-7.45, 1.3 + y, 0.4 + x);
+            frameBar.position.set(-8.85, 1.3 + y, 0.4 + x);
 
             leftWallGroup.add(frameBar);
         }
@@ -1069,7 +1069,7 @@
             18
         );
 
-        windowLight.position.set(-6.6, 1.4, 0.4);
+        windowLight.position.set(-8.0, 1.4, 0.4);
 
         scene.add(windowLight);
 
@@ -1079,7 +1079,7 @@
             woodDarkMat
         );
 
-        posterFrame.position.set(3.1, 1.1, -7.4);
+        posterFrame.position.set(3.1, 1.1, -8.8);
 
         backWallGroup.add(posterFrame);
 
@@ -1119,7 +1119,7 @@
             })
         );
 
-        posterArt.position.set(3.1, 1.1, -7.35);
+        posterArt.position.set(3.1, 1.1, -8.75);
 
         backWallGroup.add(posterArt);
 
@@ -1129,7 +1129,7 @@
             woodMat
         );
 
-        shelf.position.set(-3.4, 0.6, -7.25);
+        shelf.position.set(-3.4, 0.6, -8.65);
         shelf.castShadow = true;
 
         backWallGroup.add(shelf);
@@ -1149,7 +1149,7 @@
             book.position.set(
                 -4.6 + i * 0.55,
                 0.72 + (0.62 + (i % 3) * 0.08) / 2,
-                -7.25
+                -8.65
             );
 
             book.castShadow = true;
@@ -1159,14 +1159,14 @@
 
         // Rug on the floor in front of the desk.
         const rug = new THREE.Mesh(
-            new THREE.BoxGeometry(9.5, 0.04, 5.5),
+            new THREE.BoxGeometry(12, 0.04, 7),
             new THREE.MeshStandardMaterial({
                 color: 0x4a3f55,
                 roughness: 0.95
             })
         );
 
-        rug.position.set(0, -2.31, 4.6);
+        rug.position.set(0, -2.31, 5.4);
         rug.receiveShadow = true;
 
         scene.add(rug);
@@ -1238,13 +1238,66 @@
             roughness: 0.5
         });
 
+        // Tall floor plant in the back corner, so the larger room
+        // keeps a sense of life in its far edges.
+        const floorPot = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.34, 0.26, 0.55, 20),
+            new THREE.MeshStandardMaterial({
+                color: 0x9c6b52,
+                roughness: 0.8
+            })
+        );
+
+        floorPot.position.set(-7.9, -2.08, -7.9);
+        floorPot.castShadow = true;
+
+        scene.add(floorPot);
+
+        const floorSoil = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.30, 0.30, 0.03, 20),
+            new THREE.MeshStandardMaterial({
+                color: 0x241a12,
+                roughness: 0.95
+            })
+        );
+
+        floorSoil.position.set(-7.9, -1.82, -7.9);
+
+        scene.add(floorSoil);
+
+        for (let i = 0; i < 9; i++) {
+
+            const frond = new THREE.Mesh(
+                new THREE.ConeGeometry(0.10, 1.6 + Math.random() * 0.7, 6),
+                leafMat
+            );
+
+            const angle = (i / 9) * Math.PI * 2;
+
+            frond.position.set(
+                -7.9 + Math.cos(angle) * 0.2,
+                -0.9 + Math.random() * 0.15,
+                -7.9 + Math.sin(angle) * 0.2
+            );
+
+            frond.rotation.set(
+                Math.sin(angle) * 0.55,
+                0,
+                -Math.cos(angle) * 0.55
+            );
+
+            frond.castShadow = true;
+
+            scene.add(frond);
+        }
+
         const clockRim = new THREE.Mesh(
             new THREE.CylinderGeometry(0.38, 0.38, 0.06, 32),
             clockDark
         );
 
         clockRim.rotation.x = Math.PI / 2;
-        clockRim.position.set(-0.6, 2.7, -7.4);
+        clockRim.position.set(-0.6, 2.7, -8.8);
         clockRim.castShadow = true;
 
         backWallGroup.add(clockRim);
@@ -1257,7 +1310,7 @@
             })
         );
 
-        clockFace.position.set(-0.6, 2.7, -7.36);
+        clockFace.position.set(-0.6, 2.7, -8.76);
 
         backWallGroup.add(clockFace);
 
@@ -1269,7 +1322,7 @@
 
         const hourHand = new THREE.Mesh(hourGeo, clockDark);
 
-        hourHand.position.set(-0.6, 2.7, -7.33);
+        hourHand.position.set(-0.6, 2.7, -8.73);
         hourHand.rotation.z = Math.PI / 6;
 
         backWallGroup.add(hourHand);
@@ -1279,7 +1332,7 @@
 
         const minuteHand = new THREE.Mesh(minuteGeo, clockDark);
 
-        minuteHand.position.set(-0.6, 2.7, -7.32);
+        minuteHand.position.set(-0.6, 2.7, -8.72);
         minuteHand.rotation.z = -Math.PI / 3;
 
         backWallGroup.add(minuteHand);
@@ -1303,7 +1356,7 @@
         cg.fillRect(0, 0, 128, 128);
 
         const contactShadow = new THREE.Mesh(
-            new THREE.PlaneGeometry(4.6, 3.4),
+            new THREE.PlaneGeometry(5.8, 4.2),
             new THREE.MeshBasicMaterial({
                 map: new THREE.CanvasTexture(contactCanvas),
                 transparent: true,
@@ -1875,6 +1928,14 @@
                 roughness: 0.95
             }),
 
+            // Black epoxy of memory and GPU chips; kept separate
+            // from mat.dark so hardware variants do not recolor it.
+            chip: new THREE.MeshStandardMaterial({
+                color: 0x11151c,
+                metalness: 0.4,
+                roughness: 0.45
+            }),
+
             ramBar: makeRGBMaterial(0x05070a),
 
             fanRing: makeRGBMaterial(0x05070a),
@@ -2090,7 +2151,7 @@
 
         screwdriver.rotation.z = Math.PI / 2;
         screwdriver.rotation.y = 0.5;
-        screwdriver.position.set(-3.15, -2.29, 1.15);
+        screwdriver.position.set(-4.1, -2.29, 1.5);
 
         scene.add(screwdriver);
 
@@ -2102,7 +2163,7 @@
             })
         );
 
-        notepad.position.set(-3.05, -2.335, -0.5);
+        notepad.position.set(-4.0, -2.335, -0.7);
         notepad.rotation.y = -0.25;
         notepad.castShadow = true;
         notepad.receiveShadow = true;
@@ -2119,7 +2180,7 @@
 
         pencil.rotation.z = Math.PI / 2;
         pencil.rotation.y = -0.1;
-        pencil.position.set(-2.95, -2.31, -0.15);
+        pencil.position.set(-3.9, -2.31, -0.35);
 
         scene.add(pencil);
 
@@ -2155,7 +2216,7 @@
 
         }
 
-        powerStrip.position.set(2.3, -2.34, -3.1);
+        powerStrip.position.set(2.6, -2.34, -3.6);
         powerStrip.rotation.y = 0.4;
 
         scene.add(powerStrip);
@@ -2187,16 +2248,16 @@
 
         }
 
-        outlet.position.set(2.3, -1.85, -7.43);
+        outlet.position.set(2.3, -1.85, -8.83);
 
         scene.add(outlet);
 
         // Cable from the power strip to the wall outlet.
         const stripCableCurve = new THREE.CatmullRomCurve3([
-            new THREE.Vector3(2.55, -2.3, -3.3),
-            new THREE.Vector3(2.75, -2.1, -4.6),
-            new THREE.Vector3(2.5, -1.95, -6.2),
-            new THREE.Vector3(2.3, -1.9, -7.35)
+            new THREE.Vector3(2.85, -2.3, -3.8),
+            new THREE.Vector3(2.9, -2.1, -5.6),
+            new THREE.Vector3(2.6, -1.95, -7.4),
+            new THREE.Vector3(2.3, -1.9, -8.75)
         ]);
 
         const stripCable = new THREE.Mesh(
@@ -2854,6 +2915,137 @@
 
         }
 
+        // --- Populated-board circuitry -------------------------------
+        // VRM chokes: cubed chokes with bare metal tops beside the
+        // heatsink, where a real board stages its power stages.
+        for (let i = 0; i < 6; i++) {
+
+            box(
+                motherboard,
+                [0.11, 0.11, 0.09],
+                [-0.62 + i * 0.135, 1.32, -0.72],
+                mat.dark
+            );
+
+            box(
+                motherboard,
+                [0.08, 0.08, 0.02],
+                [-0.62 + i * 0.135, 1.32, -0.665],
+                mat.silver
+            );
+
+        }
+
+        // Low-profile SMD clusters scattered across the board:
+        // resistors and small ceramic capacitors.
+        for (let i = 0; i < 26; i++) {
+
+            box(
+                motherboard,
+                [0.05, 0.03, 0.02],
+                [
+                    -0.85 + ((i * 7.3) % 17) * 0.1,
+                    -1.45 + ((i * 4.1) % 26) * 0.1,
+                    -0.785
+                ],
+                i % 3 ? mat.dark : mat.silver
+            );
+
+        }
+
+        // Southbridge-style chip with a metal lid.
+        box(
+            motherboard,
+            [0.34, 0.34, 0.05],
+            [-0.05, -1.15, -0.755],
+            mat.dark
+        );
+
+        box(
+            motherboard,
+            [0.26, 0.26, 0.02],
+            [-0.05, -1.15, -0.72],
+            mat.silver
+        );
+
+        // LAN controller near the rear I/O edge.
+        box(
+            motherboard,
+            [0.22, 0.22, 0.04],
+            [0.72, -1.3, -0.755],
+            mat.dark
+        );
+
+        box(
+            motherboard,
+            [0.15, 0.15, 0.015],
+            [0.72, -1.3, -0.725],
+            mat.silver
+        );
+
+        // Audio codec below the capacitor stack.
+        box(
+            motherboard,
+            [0.2, 0.16, 0.04],
+            [-0.95, -1.72, -0.755],
+            mat.dark
+        );
+
+        // Gold traces running between the major components.
+        for (const [tx, ty, tl, rot] of [
+            [-0.4, 0.25, 0.7, 0],
+            [0.45, -0.2, 0.9, Math.PI / 2],
+            [-0.6, -0.5, 0.55, 0],
+            [0.2, -1.6, 0.8, 0],
+            [-0.15, 1.8, 0.6, Math.PI / 2],
+            [0.6, 0.5, 0.5, Math.PI / 2]
+        ]) {
+
+            box(
+                motherboard,
+                rot ? [0.012, tl, 0.01] : [tl, 0.012, 0.01],
+                [tx, ty, -0.788],
+                mat.gold
+            );
+
+        }
+
+        // Front-panel and USB pin headers along the bottom edge,
+        // each with a row of gold pins.
+        for (const hx of [-0.55, -0.25, 0.35]) {
+
+            box(
+                motherboard,
+                [0.16, 0.06, 0.06],
+                [hx, -1.62, -0.74],
+                mat.dark
+            );
+
+            for (let p = 0; p < 5; p++) {
+
+                box(
+                    motherboard,
+                    [0.015, 0.02, 0.05],
+                    [hx - 0.06 + p * 0.03, -1.62, -0.70],
+                    mat.gold
+                );
+
+            }
+
+        }
+
+        // Debug LEDs near the bottom-right corner.
+        for (let i = 0; i < 4; i++) {
+
+            box(
+                motherboard,
+                [0.035, 0.035, 0.02],
+                [0.55 + i * 0.07, -1.62, -0.785],
+                mat.rgb
+            );
+
+        }
+
 
         // ============================================================
         // 13. CPU
@@ -2962,6 +3154,18 @@
                 [x, 0.72, -0.48],
                 mat.dark
             );
+
+            // Memory chips down the front of the stick.
+            for (let c = 0; c < 4; c++) {
+
+                box(
+                    ram,
+                    [0.10, 0.14, 0.02],
+                    [x, 0.35 + c * 0.24, -0.455],
+                    mat.chip
+                );
+
+            }
 
             // RGB light bar along the top edge.
             box(
@@ -3109,6 +3313,56 @@
             [0.92, -0.62, -0.10],
             mat.nickel
         );
+
+        // PCB edge visible under the shroud, with the gold PCIe
+        // fingers seated in it.
+        box(
+            gpu,
+            [1.9, 0.05, 0.5],
+            [-0.05, -0.615, -0.10],
+            mat.board
+        );
+
+        // Surface-mount detail on the backplate: chokes and
+        // capacitors around the power delivery area.
+        for (let i = 0; i < 10; i++) {
+
+            box(
+                gpu,
+                [0.05, 0.02, 0.03],
+                [
+                    -0.75 + ((i * 5.7) % 15) * 0.1,
+                    -0.03,
+                    -0.2 + ((i * 3.3) % 3) * 0.1
+                ],
+                i % 2 ? mat.chip : mat.gold
+            );
+
+        }
+
+        // Second 8-pin power connector beside the first.
+        box(
+            gpu,
+            [0.22, 0.10, 0.16],
+            [0.25, -0.06, -0.10],
+            mat.dark
+        );
+
+        // Hex bolts holding the shroud edge together.
+        for (const gx of [-0.98, 0.88]) {
+
+            const shroudBolt = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.032, 0.032, 0.03, 6),
+                mat.nickel
+            );
+
+            shroudBolt.rotation.x = Math.PI / 2;
+            shroudBolt.position.set(gx, -0.35, 0.56);
+            shroudBolt.userData.componentId = 'gpu';
+
+            gpu.add(shroudBolt);
+
+        }
 
 
         // Three individual graphics-card fans.
@@ -3284,6 +3538,18 @@
             [0.82, -1.66, -0.885],
             mat.dark
         );
+
+        // Vent slits on the PSU rear face, above the label.
+        for (let i = 0; i < 7; i++) {
+
+            box(
+                psu,
+                [0.03, 0.28, 0.02],
+                [0.45 + i * 0.12, -1.42, -0.885],
+                mat.silver
+            );
+
+        }
 
 
         // ============================================================
@@ -3544,22 +3810,43 @@
         );
 
 
-        // Glass panel screws.
-        for (const x of [-1.30, 1.30]) {
-            for (const y of [-2.0, 2.0]) {
+        // Individually removable retaining pins. The glass remains locked
+        // until all four pins have been removed one by one.
+        const GLASS_PIN_IDS = [];
+        const removedGlassPins = new Set();
 
-                cylinder(
-                    glass,
-                    0.045,
-                    0.04,
-                    [x, y, 1.15],
-                    mat.gold
-                );
+        for (const [index, [bx, by]] of [
+            [-1.30, 2.0], [1.30, 2.0],
+            [-1.30, -2.0], [1.30, -2.0]
+        ].entries()) {
+            const pinId = `glass_pin_${index + 1}`;
+            GLASS_PIN_IDS.push(pinId);
+            const pin = group(pinId, [bx, by, 1.13]);
 
-            }
+            const washer = new THREE.Mesh(
+                new THREE.TorusGeometry(0.070, 0.018, 8, 24),
+                mat.metal
+            );
+            washer.position.z = 0.012;
+            pin.add(washer);
+
+            const head = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.052, 0.052, 0.055, 6),
+                mat.nickel
+            );
+            head.rotation.x = Math.PI / 2;
+            head.position.z = 0.035;
+            pin.add(head);
+
+            const socket = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.018, 0.018, 0.012, 12),
+                mat.dark
+            );
+            socket.rotation.x = Math.PI / 2;
+            socket.position.z = 0.064;
+            pin.add(socket);
         }
 
-        // ============================================================
         // CASE EXTERIOR DETAILS
         // ============================================================
 
@@ -3606,12 +3893,23 @@
         // AUTOMATICALLY FRAME THE PC MODEL
         // ============================================================
 
-        // Deepen the case (2.2 -> 3.3 along z) so its proportions
-        // read as a real square-shouldered tower instead of a flat
-        // slab. Applied before framing and slot bounds are measured,
-        // so the camera, clickable slots and highlight boxes all
-        // match the new shape.
-        modelRoot.scale.z = 1.5;
+        // Enlarge the whole build (1.25x in every direction) and
+        // deepen it (2.2 -> 3.3 along z) so its proportions read as
+        // a real square-shouldered tower, and so the added detail
+        // (panel bolts, board circuitry) has room instead of
+        // crowding. Applied before framing and slot bounds are
+        // measured, so the camera, clickable slots and highlight
+        // boxes all match the new shape.
+        modelRoot.scale.set(1.25 * 1.25, 1.25 * 1.25, 1.25 * 1.25 * 1.5);
+
+        // Lift the root so the underside of the feet (y = -2.425 in
+        // model space) sits exactly where it did before the
+        // enlargement, keeping the desk contact unchanged. The
+        // blast shake and the restart handler restore this base
+        // position rather than the origin.
+        const modelBaseY = 2.425 * (1.25 - 1);
+
+        modelRoot.position.y = modelBaseY;
 
         // Top-mounted fans are rotated so their disc lies in the
         // x/z plane; pre-squash them along their local y so the
@@ -3644,7 +3942,7 @@
         const distance =
             largestDimension /
             (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))) *
-            1.5;
+            1.75;
 
         const viewingDirection = new THREE.Vector3(1, 0.65, 1.25).normalize();
 
@@ -3825,6 +4123,33 @@
 
 
 
+        // Parts that can be reached from outside the closed case.
+        // Everything not listed here is inside the PC and stays
+        // locked while the glass side panel is on.
+        const EXTERNAL_IDS = new Set([
+            'case',
+            'case_feet',
+            'glass_panel',
+            'psu_switch',
+            'power_cable',
+            'front_io',
+            'rear_io',
+            'power_button'
+        ]);
+
+
+        function isLockedByGlass(id) {
+
+            // The glass is hidden only once its removal is accepted,
+            // and shows again when it is reinstalled.
+            return (
+                components.glass_panel.visible &&
+                !EXTERNAL_IDS.has(id) &&
+                !GLASS_PIN_IDS.includes(id)
+            );
+        }
+
+
         function getComponentAtPointer(event) {
 
             const rect = canvas.getBoundingClientRect();
@@ -3838,18 +4163,30 @@
             raycaster.setFromCamera(pointer, camera);
 
             // Only visible components can normally be selected.
-            const pickObjects = Object.values(components)
-                .filter(object => object.visible);
+            const allGlassPinsRemoved =
+                GLASS_PIN_IDS.every(pinId => removedGlassPins.has(pinId));
 
-            // An empty slot is selectable only when the current
-            // instruction asks us to install that component.
+            const pickObjects = Object.entries(components)
+                .filter(([id, object]) => {
+                    if (!object.visible) return false;
+                    if (id === 'glass_panel' && !allGlassPinsRemoved) return false;
+                    return true;
+                })
+                .map(([, object]) => object);
+
+            // Condition A hides the guidance outline, not the install hitbox.
+            const installTargetId =
+                currentState?.highlight?.component_id ??
+                currentState?.correct_component_id ??
+                targetId;
+
             if (
                 currentState &&
                 currentState.expected_action === 'install' &&
-                targetId &&
-                removedComponents.has(targetId)
+                installTargetId &&
+                removedComponents.has(installTargetId)
             ) {
-                pickObjects.push(slotTargets[targetId]);
+                pickObjects.push(slotTargets[installTargetId]);
             }
 
             const hits = raycaster.intersectObjects(
@@ -3862,7 +4199,9 @@
                 const id = componentIdFromObject(hit.object);
 
                 if (id) {
-                    return id;
+                    // A locked part still blocks the ray, so nothing
+                    // behind it can be clicked through it either.
+                    return isLockedByGlass(id) ? null : id;
                 }
 
             }
@@ -3908,8 +4247,16 @@
                 ? (isEmptySlot ? slotTargets[id] : components[id])
                 : null;
 
+            // The glass gets no outline while any pin still holds
+            // it, even when it is the part the step is asking for.
+            const isPinnedGlass =
+                id === 'glass_panel' &&
+                !GLASS_PIN_IDS.every(pinId => removedGlassPins.has(pinId));
+
             if (
                 object &&
+                id !== 'case' &&
+                !isPinnedGlass &&
                 (isEmptySlot || object.visible)
             ) {
 
@@ -4007,6 +4354,18 @@
             const id = getComponentAtPointer(event);
 
             if (!id) return;
+
+            // Remove each retaining pin individually before the glass can be selected.
+            if (GLASS_PIN_IDS.includes(id)) {
+                if (!removedGlassPins.has(id)) {
+                    removedGlassPins.add(id);
+                    if (components[id]) components[id].visible = false;
+                    playClickSound();
+                    hoveredId = null;
+                    updateHighlight();
+                }
+                return;
+            }
 
             // The procedure must contain the clicked component.
             const knownComponent =
@@ -4153,6 +4512,15 @@
 
             instructionElement.textContent =
                 state.instruction || 'Waiting for instructions...';
+
+            if (
+                state.expected_action === 'remove' &&
+                (state.highlight?.component_id === 'glass_panel' ||
+                    state.correct_component_id === 'glass_panel')
+            ) {
+                instructionElement.textContent +=
+                    ' Remove all 4 small retaining pins around the glass first. Click each pin individually; the panel unlocks when the last pin is removed.';
+            }
 
 
             statusElement.textContent =
@@ -4823,7 +5191,7 @@
 
             shakeTime = 0;
 
-            modelRoot.position.set(0, 0, 0);
+            modelRoot.position.set(0, modelBaseY, 0);
 
             hazardElement.style.display = 'none';
 
@@ -5005,8 +5373,8 @@
             // see-through from outside; their decorations hide
             // while the camera is on the far side, so nothing
             // floats in front of the PC.
-            backWallGroup.visible = camera.position.z > -7.3;
-            leftWallGroup.visible = camera.position.x > -7.3;
+            backWallGroup.visible = camera.position.z > -8.7;
+            leftWallGroup.visible = camera.position.x > -8.7;
 
             if (highlightBox) {
                 highlightBox.update();
@@ -5087,12 +5455,12 @@
 
                 modelRoot.position.set(
                     (Math.random() - 0.5) * strength,
-                    (Math.random() - 0.5) * strength,
+                    modelBaseY + (Math.random() - 0.5) * strength,
                     (Math.random() - 0.5) * strength
                 );
 
                 if (shakeTime <= 0) {
-                    modelRoot.position.set(0, 0, 0);
+                    modelRoot.position.set(0, modelBaseY, 0);
                 }
 
             }
@@ -5214,6 +5582,10 @@
                 applyVariant(initialState.variant);
 
                 removedComponents.clear();
+
+                // Put the glass pins back in the count, so the glass
+                // (and the parts behind it) lock again on restart.
+                removedGlassPins.clear();
 
                 toggleStates.set('psu_switch', true);
 
